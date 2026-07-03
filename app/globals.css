@@ -5,6 +5,12 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --color-green-300: #c5e87a;
+  --color-green-400: #99D742;
+  --color-green-500: #99D742;
+  --color-green-600: #7ab831;
+  --color-green-700: #6b9e2a;
+  --color-green-900: #3a5a10;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-montserrat);

@@ -171,7 +171,7 @@ function Lightbox({
                 className={`h-1.5 rounded-full transition-all duration-300 ${
                   i === current ? "w-5" : "bg-white/20 w-1.5"
                 }`}
-                style={i === current ? { background: "#4ade80" } : {}}
+                style={i === current ? { background: "#99D742" } : {}}
               />
             ))}
           </div>
@@ -245,7 +245,7 @@ function ImageGallery({
                   className={`h-1.5 rounded-full transition-all duration-300 ${
                     i === current ? "w-5" : "bg-white/30 w-1.5"
                   }`}
-                  style={i === current ? { background: "#4ade80" } : {}}
+                  style={i === current ? { background: "#99D742" } : {}}
                 />
               ))}
             </div>
@@ -264,9 +264,9 @@ function ImageGallery({
                 <span
                   className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] mt-0.5"
                   style={{
-                    background: "rgba(34,197,94,0.15)",
-                    border: "1px solid rgba(34,197,94,0.2)",
-                    color: "#4ade80",
+                    background: "rgba(153,215,66,0.15)",
+                    border: "1px solid rgba(153,215,66,0.2)",
+                    color: "#99D742",
                   }}
                 >
                   {i + 1}
@@ -303,9 +303,9 @@ function VideoPlayer({ step }: { step: TutorialStep }) {
           <div
             className="w-12 h-12 rounded-full flex items-center justify-center"
             style={{
-              background: "rgba(34,197,94,0.1)",
-              border: "1px solid rgba(34,197,94,0.2)",
-              color: "#4ade80",
+              background: "rgba(153,215,66,0.1)",
+              border: "1px solid rgba(153,215,66,0.2)",
+              color: "#99D742",
             }}
           >
             <IoPlayCircleOutline className="w-6 h-6" />
@@ -341,7 +341,7 @@ function StepAccordion({
         {/* Ghost number — desktop */}
         <span
           className="hidden md:block text-6xl lg:text-8xl font-black leading-none shrink-0 w-20 text-right tabular-nums select-none transition-colors duration-300 pt-1"
-          style={{ color: isOpen ? "rgba(34,197,94,0.09)" : "rgba(255,255,255,0.03)" }}
+          style={{ color: isOpen ? "rgba(153,215,66,0.09)" : "rgba(255,255,255,0.03)" }}
         >
           {String(step.order).padStart(2, "0")}
         </span>
@@ -360,9 +360,9 @@ function StepAccordion({
           style={
             isOpen
               ? {
-                  background: "#22c55e",
+                  background: "#99D742",
                   color: "white",
-                  boxShadow: "0 8px 24px rgba(34,197,94,0.3)",
+                  boxShadow: "0 8px 24px rgba(153,215,66,0.3)",
                 }
               : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)" }
           }
@@ -398,8 +398,8 @@ function StepAccordion({
         <div
           className="shrink-0 w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center transition-all duration-200 mt-1"
           style={{
-            background: isOpen ? "rgba(34,197,94,0.2)" : "rgba(255,255,255,0.05)",
-            color: isOpen ? "#4ade80" : "rgba(255,255,255,0.2)",
+            background: isOpen ? "rgba(153,215,66,0.2)" : "rgba(255,255,255,0.05)",
+            color: isOpen ? "#99D742" : "rgba(255,255,255,0.2)",
             transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
           }}
         >
@@ -540,7 +540,7 @@ export default function TutorialPage() {
       >
         <div
           className="w-7 h-7 border-2 border-t-transparent rounded-full animate-spin"
-          style={{ borderColor: "#22c55e", borderTopColor: "transparent" }}
+          style={{ borderColor: "#99D742", borderTopColor: "transparent" }}
         />
       </div>
     );
@@ -550,29 +550,29 @@ export default function TutorialPage() {
     {
       title: "Inicio",
       icon: <IoHomeOutline />,
-      gradientFrom: "#15803d",
-      gradientTo: "#4ade80",
+      gradientFrom: "#6b9e2a",
+      gradientTo: "#99D742",
       onClick: () => { sessionStorage.removeItem("bryanf_auth"); router.push("/"); },
     },
     {
       title: "Pasos",
       icon: <IoPlayCircleOutline />,
-      gradientFrom: "#16a34a",
-      gradientTo: "#86efac",
+      gradientFrom: "#7ab831",
+      gradientTo: "#c5e87a",
       onClick: () => document.getElementById("steps")?.scrollIntoView({ behavior: "smooth" }),
     },
     {
       title: "Drive",
       icon: <IoCloudOutline />,
       gradientFrom: "#0ea5e9",
-      gradientTo: "#22c55e",
+      gradientTo: "#99D742",
       href: client.driveLink,
       external: true,
     },
     {
       title: "Ayuda",
       icon: <IoLogoWhatsapp />,
-      gradientFrom: "#16a34a",
+      gradientFrom: "#7ab831",
       gradientTo: "#22d3ee",
       href: WHATSAPP_LINK,
       external: true,
@@ -621,7 +621,7 @@ export default function TutorialPage() {
           style={{ background: "rgba(2,10,4,0.15)" }}
         >
           <div className="max-w-5xl mx-auto px-4 h-14 md:h-16 flex items-center justify-center">
-            <div className="relative w-28 h-8 md:w-36 md:h-10">
+            <div className="relative w-28 h-8 md:w-36 md:h-10" style={{ filter: "brightness(0) invert(1)" }}>
               <Image
                 src="/logo.png"
                 alt="BryanF Design"
@@ -645,18 +645,18 @@ export default function TutorialPage() {
                 className="inline-flex items-center gap-2 text-[10px] md:text-xs font-bold rounded-full px-3 py-1 mb-4 tracking-widest uppercase"
                 style={{
                   color: "rgba(74,222,128,0.6)",
-                  background: "rgba(34,197,94,0.08)",
-                  border: "1px solid rgba(34,197,94,0.12)",
+                  background: "rgba(153,215,66,0.08)",
+                  border: "1px solid rgba(153,215,66,0.12)",
                 }}
               >
-                <span className="w-1.5 h-1.5 rounded-full inline-block animate-pulse" style={{ background: "#4ade80" }} />
+                <span className="w-1.5 h-1.5 rounded-full inline-block animate-pulse" style={{ background: "#99D742" }} />
                 Proyecto activo · {client.displayName}
               </span>
               <h1 className="text-3xl sm:text-4xl md:text-6xl font-black text-white tracking-tight leading-[1.05]">
                 Tus{" "}
                 <span
                   className="text-transparent bg-clip-text"
-                  style={{ backgroundImage: "linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #86efac 100%)" }}
+                  style={{ backgroundImage: "linear-gradient(135deg, #99D742 0%, #99D742 50%, #c5e87a 100%)" }}
                 >
                   tutoriales
                 </span>
@@ -677,7 +677,7 @@ export default function TutorialPage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 font-semibold rounded-full px-6 py-2.5 text-sm transition-all duration-150 active:scale-95"
-                style={{ background: "linear-gradient(135deg, #15803d, #22c55e)", color: "white" }}
+                style={{ background: "linear-gradient(135deg, #6b9e2a, #99D742)", color: "white" }}
               >
                 <IoCloudOutline className="w-4 h-4" />
                 Abrir carpeta en Drive

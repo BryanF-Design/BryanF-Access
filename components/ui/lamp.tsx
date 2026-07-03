@@ -27,7 +27,7 @@ export const LampContainer = ({
           className="absolute inset-auto right-1/2 h-56 overflow-visible w-[30rem]"
           style={{
             backgroundImage:
-              "conic-gradient(from 70deg at center top, #22c55e, transparent, transparent)",
+              "conic-gradient(from 70deg at center top, #99D742, transparent, transparent)",
           }}
         >
           <div
@@ -54,7 +54,7 @@ export const LampContainer = ({
           className="absolute inset-auto left-1/2 h-56 w-[30rem]"
           style={{
             backgroundImage:
-              "conic-gradient(from 290deg at center top, transparent, transparent, #22c55e)",
+              "conic-gradient(from 290deg at center top, transparent, transparent, #99D742)",
           }}
         >
           <div
@@ -80,7 +80,7 @@ export const LampContainer = ({
         <div className="absolute top-1/2 z-50 h-48 w-full bg-transparent opacity-10 backdrop-blur-md" />
         <div
           className="absolute inset-auto z-50 h-36 w-[28rem] -translate-y-1/2 rounded-full opacity-40 blur-3xl"
-          style={{ background: "#22c55e" }}
+          style={{ background: "#99D742" }}
         />
 
         <motion.div
@@ -88,14 +88,14 @@ export const LampContainer = ({
           whileInView={{ width: "16rem" }}
           transition={{ delay: 0.3, duration: 0.8, ease: "easeInOut" }}
           className="absolute inset-auto z-30 h-36 -translate-y-[6rem] rounded-full blur-2xl"
-          style={{ background: "#4ade80" }}
+          style={{ background: "#99D742" }}
         />
         <motion.div
           initial={{ width: "15rem" }}
           whileInView={{ width: "30rem" }}
           transition={{ delay: 0.3, duration: 0.8, ease: "easeInOut" }}
           className="absolute inset-auto z-50 h-0.5 w-[30rem] -translate-y-[7rem]"
-          style={{ background: "#4ade80" }}
+          style={{ background: "#99D742" }}
         />
 
         <div

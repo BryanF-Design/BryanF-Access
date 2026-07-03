@@ -79,7 +79,7 @@ export default function Home() {
         {/* Logo */}
         <div
           className="relative w-52 h-24 md:w-72 md:h-32"
-          style={{ filter: "drop-shadow(0 0 30px rgba(34,197,94,0.5))" }}
+          style={{ filter: "brightness(0) invert(1) drop-shadow(0 0 30px rgba(153,215,66,0.4))" }}
         >
           <Image
             src="/logo.png"
@@ -94,7 +94,10 @@ export default function Home() {
         <div className="text-center">
           <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-white">
             BryanF{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-green-600">
+            <span
+              className="text-transparent bg-clip-text"
+              style={{ backgroundImage: "linear-gradient(to right, #99D742, #6b9e2a)" }}
+            >
               Access
             </span>
           </h1>
@@ -136,7 +139,7 @@ export default function Home() {
                 <button
                   type="submit"
                   className="w-full text-white font-semibold rounded-xl py-3 text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-400"
-                  style={{ background: "linear-gradient(135deg, #15803d, #22c55e)" }}
+                  style={{ background: "linear-gradient(135deg, #6b9e2a, #99D742)" }}
                 >
                   Continuar →
                 </button>
@@ -167,14 +170,14 @@ export default function Home() {
                   <span
                     className="inline-flex items-center gap-1.5 text-xs rounded-full px-3 py-1"
                     style={{
-                      color: "#4ade80",
-                      background: "rgba(34,197,94,0.1)",
-                      border: "1px solid rgba(34,197,94,0.2)",
+                      color: "#99D742",
+                      background: "rgba(153,215,66,0.1)",
+                      border: "1px solid rgba(153,215,66,0.2)",
                     }}
                   >
                     <span
                       className="w-1.5 h-1.5 rounded-full inline-block"
-                      style={{ background: "#4ade80" }}
+                      style={{ background: "#99D742" }}
                     />
                     Código {clientId} verificado
                   </span>
@@ -200,7 +203,7 @@ export default function Home() {
                   type="submit"
                   disabled={loading}
                   className="w-full disabled:opacity-60 text-white font-semibold rounded-xl py-3 text-sm transition-colors duration-200"
-                  style={{ background: "linear-gradient(135deg, #15803d, #22c55e)" }}
+                  style={{ background: "linear-gradient(135deg, #6b9e2a, #99D742)" }}
                 >
                   {loading ? "Verificando..." : "Acceder a mis tutoriales →"}
                 </button>
