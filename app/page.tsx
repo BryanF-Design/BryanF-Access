@@ -225,7 +225,7 @@ export default function Home() {
                     type="text"
                     value={idInput}
                     onChange={(e) => setIdInput(e.target.value.toUpperCase())}
-                    placeholder="Ej: KD0626A"
+                    placeholder="Tu código de acceso"
                     required
                     autoFocus
                     autoComplete="off"
@@ -293,7 +293,7 @@ export default function Home() {
                     type="text"
                     value={verifyInput}
                     onChange={(e) => setVerifyInput(e.target.value)}
-                    placeholder="Ej: koiarquitectura.com o Mi Empresa"
+                    placeholder="Tu dominio o nombre de empresa"
                     required
                     autoFocus
                     autoComplete="off"

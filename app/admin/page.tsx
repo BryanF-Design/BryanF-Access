@@ -407,7 +407,7 @@ export default function AdminPage() {
                     onChange={(e) =>
                       setForm({ ...form, id: e.target.value.toUpperCase() })
                     }
-                    placeholder="Ej: KD0626A"
+                    placeholder="Código único del proyecto"
                     required
                     maxLength={12}
                     className="w-full bg-slate-800/60 border border-slate-600/60 text-white placeholder-slate-500 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition uppercase tracking-widest"
@@ -423,7 +423,7 @@ export default function AdminPage() {
                     onChange={(e) =>
                       setForm({ ...form, display_name: e.target.value })
                     }
-                    placeholder="Ej: Koi Arquitectura"
+                    placeholder="Nombre del cliente o empresa"
                     required
                     className="w-full bg-slate-800/60 border border-slate-600/60 text-white placeholder-slate-500 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
                   />
@@ -438,7 +438,7 @@ export default function AdminPage() {
                     onChange={(e) =>
                       setForm({ ...form, keywords: e.target.value })
                     }
-                    placeholder="koiarquitectura.com, koi arquitectura"
+                    placeholder="dominio.com, nombre alternativo"
                     required
                     className="w-full bg-slate-800/60 border border-slate-600/60 text-white placeholder-slate-500 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"
                   />
