@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { LampContainer } from "@/components/ui/lamp";
@@ -19,12 +19,44 @@ export default function Home() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Anti-bot: honeypot + form load timestamp
+  const [honeypot, setHoneypot] = useState("");
+  const formLoadTime = useRef(Date.now());
+
+  useEffect(() => {
+    formLoadTime.current = Date.now();
+  }, []);
+
+  function isBotLikely(): boolean {
+    if (honeypot.length > 0) return true;
+    // Bots submit instantly; humans take at least 1.5s
+    if (Date.now() - formLoadTime.current < 1500) return true;
+    return false;
+  }
+
   async function handleIdSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (isBotLikely()) {
+      // Silently fail — don't reveal bot detection
+      setLoading(true);
+      await new Promise((r) => setTimeout(r, 1200));
+      setError("No encontramos un proyecto con ese código. Verifica e intenta de nuevo.");
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await fetch(`/api/client/${encodeURIComponent(idInput.trim().toUpperCase())}`);
+      const res = await fetch(
+        `/api/client/${encodeURIComponent(idInput.trim().toUpperCase())}`
+      );
+      if (res.status === 429) {
+        setError("Demasiados intentos. Espera un momento e intenta de nuevo.");
+        setLoading(false);
+        return;
+      }
       if (!res.ok) {
         setError("No encontramos un proyecto con ese código. Verifica e intenta de nuevo.");
         setLoading(false);
@@ -34,6 +66,7 @@ export default function Home() {
       setFoundClient(client);
       setClientId(client.id);
       setStep("verify");
+      formLoadTime.current = Date.now();
     } catch {
       setError("Error de conexión. Intenta de nuevo.");
     } finally {
@@ -48,8 +81,12 @@ export default function Home() {
     if (!foundClient) { setStep("error"); setLoading(false); return; }
 
     function normalize(s: string) {
-      return s.toLowerCase().trim()
-        .replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/$/, "");
+      return s
+        .toLowerCase()
+        .trim()
+        .replace(/^https?:\/\//, "")
+        .replace(/^www\./, "")
+        .replace(/\/$/, "");
     }
     const input = normalize(verifyInput);
     const valid = foundClient.keywords.some((k) => normalize(k) === input);
@@ -79,7 +116,10 @@ export default function Home() {
         {/* Logo */}
         <div
           className="relative w-52 h-24 md:w-72 md:h-32"
-          style={{ filter: "brightness(0) invert(1) drop-shadow(0 0 30px rgba(153,215,66,0.4))" }}
+          style={{
+            filter:
+              "brightness(0) invert(1) drop-shadow(0 0 30px rgba(153,215,66,0.4))",
+          }}
         >
           <Image
             src="/logo.png"
@@ -96,7 +136,9 @@ export default function Home() {
             BryanF{" "}
             <span
               className="text-transparent bg-clip-text"
-              style={{ backgroundImage: "linear-gradient(to right, #99D742, #6b9e2a)" }}
+              style={{
+                backgroundImage: "linear-gradient(to right, #99D742, #6b9e2a)",
+              }}
             >
               Access
             </span>
@@ -108,6 +150,44 @@ export default function Home() {
 
         {/* Auth card */}
         <div className="w-full mt-2 bg-slate-900/80 backdrop-blur border border-slate-700/60 rounded-2xl p-6 shadow-xl shadow-green-900/20">
+          {/* Security badge */}
+          <div className="flex items-center justify-center gap-1.5 mb-5">
+            <svg
+              viewBox="0 0 24 24"
+              className="w-3 h-3"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2.5}
+              style={{ color: "rgba(153,215,66,0.6)" }}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+              />
+            </svg>
+            <span
+              className="text-[10px] font-semibold uppercase tracking-widest"
+              style={{ color: "rgba(153,215,66,0.5)" }}
+            >
+              Acceso seguro y verificado
+            </span>
+            <svg
+              viewBox="0 0 24 24"
+              className="w-3 h-3"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2.5}
+              style={{ color: "rgba(153,215,66,0.6)" }}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+              />
+            </svg>
+          </div>
+
           <AnimatePresence mode="wait">
             {step === "id" && (
               <motion.form
@@ -119,6 +199,24 @@ export default function Home() {
                 onSubmit={handleIdSubmit}
                 className="flex flex-col gap-4"
               >
+                {/* Honeypot — must stay hidden and empty */}
+                <input
+                  type="text"
+                  name="website"
+                  value={honeypot}
+                  onChange={(e) => setHoneypot(e.target.value)}
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute",
+                    left: "-9999px",
+                    opacity: 0,
+                    height: 0,
+                    width: 0,
+                  }}
+                />
+
                 <div>
                   <label className="block text-slate-300 text-sm font-medium mb-1.5">
                     Código de proyecto
@@ -130,6 +228,8 @@ export default function Home() {
                     placeholder="Ej: KD0626A"
                     required
                     autoFocus
+                    autoComplete="off"
+                    maxLength={12}
                     className="w-full bg-slate-800 border border-slate-600 text-white placeholder-slate-500 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition uppercase tracking-widest"
                   />
                   {error && (
@@ -138,10 +238,13 @@ export default function Home() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full text-white font-semibold rounded-xl py-3 text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-400"
-                  style={{ background: "linear-gradient(135deg, #6b9e2a, #99D742)" }}
+                  disabled={loading}
+                  className="w-full disabled:opacity-60 text-white font-semibold rounded-xl py-3 text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-400"
+                  style={{
+                    background: "linear-gradient(135deg, #6b9e2a, #99D742)",
+                  }}
                 >
-                  Continuar →
+                  {loading ? "Buscando..." : "Continuar →"}
                 </button>
                 <div className="text-center">
                   <a
@@ -193,6 +296,7 @@ export default function Home() {
                     placeholder="Ej: koiarquitectura.com o Mi Empresa"
                     required
                     autoFocus
+                    autoComplete="off"
                     className="w-full bg-slate-800 border border-slate-600 text-white placeholder-slate-500 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
                   />
                   {error && (
@@ -203,7 +307,9 @@ export default function Home() {
                   type="submit"
                   disabled={loading}
                   className="w-full disabled:opacity-60 text-white font-semibold rounded-xl py-3 text-sm transition-colors duration-200"
-                  style={{ background: "linear-gradient(135deg, #6b9e2a, #99D742)" }}
+                  style={{
+                    background: "linear-gradient(135deg, #6b9e2a, #99D742)",
+                  }}
                 >
                   {loading ? "Verificando..." : "Acceder a mis tutoriales →"}
                 </button>
@@ -246,7 +352,10 @@ export default function Home() {
                   href={WHATSAPP_LINK}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-xl py-3 text-sm transition-colors"
+                  className="w-full flex items-center justify-center gap-2 text-white font-semibold rounded-xl py-3 text-sm transition-colors"
+                  style={{
+                    background: "linear-gradient(135deg, #6b9e2a, #99D742)",
+                  }}
                 >
                   <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
