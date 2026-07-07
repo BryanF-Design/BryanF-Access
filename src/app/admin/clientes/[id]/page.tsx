@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/admin";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { StatusPill } from "@/components/status-pill";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { SendAccessLinkForm } from "./send-access-link-form";
 import type { Client, Payment, Project } from "@/types/database";
 
 export default async function AdminClientDetailPage({
@@ -60,13 +61,16 @@ export default async function AdminClientDetailPage({
             Cliente desde {formatDate(client.created_at)}
           </p>
         </div>
-        <Link
-          href={`/admin/proyectos/nuevo?cliente=${client.id}`}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-lime px-4 py-2 text-sm font-medium text-ink transition hover:bg-lime-deep"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          Nuevo proyecto
-        </Link>
+        <div className="flex flex-wrap items-start gap-3">
+          <SendAccessLinkForm clientId={client.id} />
+          <Link
+            href={`/admin/proyectos/nuevo?cliente=${client.id}`}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-lime px-4 py-2 text-sm font-medium text-ink transition hover:bg-lime-deep"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Nuevo proyecto
+          </Link>
+        </div>
       </div>
 
       <h2 className="mb-4 mt-10 font-display text-lg font-semibold text-paper">Proyectos</h2>

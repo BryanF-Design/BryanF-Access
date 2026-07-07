@@ -17,6 +17,48 @@ const newClientSchema = z.object({
   email: z.string().trim().email("Escribe un correo válido."),
 });
 
+const sendClientAccessSchema = z.object({
+  clientId: z.string().uuid("Cliente inválido."),
+});
+
+function toOrigin(value: string | null) {
+  if (!value) return null;
+
+  try {
+    return new URL(value).origin;
+  } catch {
+    return null;
+  }
+}
+
+function getAuthCallbackUrl() {
+  const origin =
+    toOrigin(process.env.NEXT_PUBLIC_SITE_URL ?? null) ??
+    toOrigin(
+      process.env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+        : null,
+    ) ??
+    toOrigin(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ??
+    "http://localhost:3001";
+
+  return `${origin}/auth/callback`;
+}
+
+function humanizeAuthEmailError(message: string) {
+  const lower = message.toLowerCase();
+
+  if (lower.includes("email address not authorized")) {
+    return "Supabase no está enviando a correos externos. Configura SMTP personalizado en Supabase Auth.";
+  }
+
+  if (lower.includes("rate limit") || lower.includes("too many")) {
+    return "Supabase limitó el envío. Espera un minuto e intenta de nuevo.";
+  }
+
+  return "No se pudo enviar el enlace. Revisa la configuración de Auth/SMTP en Supabase.";
+}
+
 export async function createClientAccount(
   _prev: ActionState,
   formData: FormData,
@@ -71,6 +113,52 @@ export async function createClientAccount(
   }
 
   redirect(`/admin/clientes/${(client as { id: string }).id}`);
+}
+
+export async function sendClientAccessLink(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+
+  const parsed = sendClientAccessSchema.safeParse({
+    clientId: formData.get("clientId"),
+  });
+
+  if (!parsed.success) {
+    return { ok: false, message: parsed.error.issues[0]?.message ?? "Cliente inválido." };
+  }
+
+  const service = createServiceRoleClient();
+  const { data: client } = await service
+    .from("clients")
+    .select("id, email")
+    .eq("id", parsed.data.clientId)
+    .maybeSingle<{ id: string; email: string }>();
+
+  if (!client) {
+    return { ok: false, message: "No encontramos ese cliente." };
+  }
+
+  const { error } = await service.auth.signInWithOtp({
+    email: client.email,
+    options: {
+      emailRedirectTo: getAuthCallbackUrl(),
+      shouldCreateUser: false,
+    },
+  });
+
+  await service.from("audit_log").insert({
+    actor_email: null,
+    event: error ? "admin_access_link_failed" : "admin_access_link_sent",
+    metadata: { client_id: client.id, client_email: client.email, error: error?.message ?? null },
+  });
+
+  if (error) {
+    return { ok: false, message: humanizeAuthEmailError(error.message) };
+  }
+
+  return { ok: true, message: `Enlace enviado a ${client.email}.` };
 }
 
 const newProjectSchema = z.object({
