@@ -151,16 +151,19 @@ alter table public.audit_log enable row level security;
 
 -- admins: a signed-in user can only ever see their own admin record — this is
 -- the check the app uses to decide whether someone gets into /admin at all
+drop policy if exists "admins_select_own" on public.admins;
 create policy "admins_select_own"
   on public.admins for select
   using (auth_user_id = auth.uid());
 
 -- clients: a signed-in user can only ever see their own client record
+drop policy if exists "clients_select_own" on public.clients;
 create policy "clients_select_own"
   on public.clients for select
   using (auth_user_id = auth.uid());
 
 -- projects: only projects owned by the caller's client record
+drop policy if exists "projects_select_own" on public.projects;
 create policy "projects_select_own"
   on public.projects for select
   using (
@@ -168,6 +171,7 @@ create policy "projects_select_own"
   );
 
 -- payments / milestones / deliverables: scoped through their project's owner
+drop policy if exists "payments_select_own" on public.payments;
 create policy "payments_select_own"
   on public.payments for select
   using (
@@ -178,6 +182,7 @@ create policy "payments_select_own"
     )
   );
 
+drop policy if exists "milestones_select_own" on public.milestones;
 create policy "milestones_select_own"
   on public.milestones for select
   using (
@@ -188,6 +193,7 @@ create policy "milestones_select_own"
     )
   );
 
+drop policy if exists "deliverables_select_own" on public.deliverables;
 create policy "deliverables_select_own"
   on public.deliverables for select
   using (
@@ -198,6 +204,7 @@ create policy "deliverables_select_own"
     )
   );
 
+drop policy if exists "project_resources_select_own" on public.project_resources;
 create policy "project_resources_select_own"
   on public.project_resources for select
   using (
@@ -223,6 +230,7 @@ on conflict (id) do nothing;
 -- This policy is defense-in-depth: the app always serves files through
 -- short-lived signed URLs generated server-side, but this makes sure a
 -- direct client-side storage query can never leak another client's files.
+drop policy if exists "deliverables_storage_select_own" on storage.objects;
 create policy "deliverables_storage_select_own"
   on storage.objects for select
   using (
