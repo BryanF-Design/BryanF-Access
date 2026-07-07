@@ -25,23 +25,62 @@ async function logAttempt(event: string, email: string | null, ip: string) {
   }
 }
 
-function getSafeOrigin(headerOrigin: string | null) {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  const configuredOrigin = new URL(configured).origin;
-
-  if (!headerOrigin) return configuredOrigin;
+function toOrigin(value: string | null) {
+  if (!value) return null;
 
   try {
-    const requestOrigin = new URL(headerOrigin).origin;
+    return new URL(value).origin;
+  } catch {
+    return null;
+  }
+}
+
+function getConfiguredOrigin() {
+  return (
+    toOrigin(process.env.NEXT_PUBLIC_SITE_URL ?? null) ??
+    toOrigin(
+      process.env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+        : null,
+    ) ??
+    toOrigin(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+  );
+}
+
+function getRequestOrigin(headerList: Headers) {
+  const headerOrigin = toOrigin(headerList.get("origin"));
+  if (headerOrigin) return headerOrigin;
+
+  const host = headerList.get("x-forwarded-host") ?? headerList.get("host");
+  if (!host) return null;
+
+  const proto =
+    headerList.get("x-forwarded-proto") ??
+    (host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "http" : "https");
+
+  return toOrigin(`${proto}://${host}`);
+}
+
+function getSafeOrigin(headerList: Headers) {
+  const configuredOrigin = getConfiguredOrigin();
+  const requestOrigin = getRequestOrigin(headerList);
+
+  if (configuredOrigin) return configuredOrigin;
+
+  try {
     const isLocalDev =
       process.env.NODE_ENV !== "production" &&
-      (requestOrigin.startsWith("http://localhost") ||
-        requestOrigin.startsWith("http://127.0.0.1"));
+      requestOrigin &&
+      (requestOrigin.startsWith("http://localhost") || requestOrigin.startsWith("http://127.0.0.1"));
 
-    return requestOrigin === configuredOrigin || isLocalDev ? requestOrigin : configuredOrigin;
+    if (isLocalDev) return requestOrigin;
+
+    if (requestOrigin?.startsWith("https://")) return requestOrigin;
   } catch {
-    return configuredOrigin;
+    // Fall through to the local default below.
   }
+
+  return "http://localhost:3000";
 }
 
 export async function requestMagicLink(
@@ -97,7 +136,7 @@ export async function requestMagicLink(
     };
   }
 
-  const origin = getSafeOrigin(headerList.get("origin"));
+  const origin = getSafeOrigin(headerList);
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email,
