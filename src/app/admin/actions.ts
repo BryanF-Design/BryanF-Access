@@ -9,6 +9,7 @@ import { createServiceRoleClient } from "@/lib/supabase/server";
 export interface ActionState {
   ok: boolean;
   message: string;
+  accessLink?: string;
 }
 
 const newClientSchema = z.object({
@@ -57,6 +58,21 @@ function humanizeAuthEmailError(message: string) {
   }
 
   return "No se pudo enviar el enlace. Revisa la configuración de Auth/SMTP en Supabase.";
+}
+
+async function generateManualAccessLink(service: ReturnType<typeof createServiceRoleClient>, email: string) {
+  const { data, error } = await service.auth.admin.generateLink({
+    type: "magiclink",
+    email,
+    options: {
+      redirectTo: getAuthCallbackUrl(),
+    },
+  });
+
+  return {
+    error,
+    link: data?.properties?.action_link ?? null,
+  };
 }
 
 export async function createClientAccount(
@@ -155,7 +171,26 @@ export async function sendClientAccessLink(
   });
 
   if (error) {
-    return { ok: false, message: humanizeAuthEmailError(error.message) };
+    const manual = await generateManualAccessLink(service, client.email);
+
+    await service.from("audit_log").insert({
+      actor_email: null,
+      event: manual.link ? "admin_manual_access_link_generated" : "admin_manual_access_link_failed",
+      metadata: {
+        client_id: client.id,
+        client_email: client.email,
+        send_error: error.message,
+        manual_error: manual.error?.message ?? null,
+      },
+    });
+
+    return {
+      ok: false,
+      message: manual.link
+        ? `${humanizeAuthEmailError(error.message)} Copia este enlace temporal y envíaselo directo al cliente.`
+        : humanizeAuthEmailError(error.message),
+      accessLink: manual.link ?? undefined,
+    };
   }
 
   return { ok: true, message: `Enlace enviado a ${client.email}.` };
