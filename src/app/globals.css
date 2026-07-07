@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+:root {
+  /* Brand */
+  --lime: #b3e331;
+  --lime-deep: #7fa61f;
+  --lime-dim: #2c3a17;
+
+  /* Base surfaces — near-black with a green undertone, not pure black */
+  --ink: #0e1310;
+  --ink-raised: #161d18;
+  --graphite: #1b241d;
+  --hairline: #2a342c;
+
+  /* Paper — warm off-white, evokes the printed receipt */
+  --paper: #f6f7f1;
+  --paper-dim: #c9cdc0;
+
+  /* Status accents */
+  --amber: #f2a93c;
+  --rose: #e8604a;
+
+  --radius-card: 1.25rem;
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-ink-raised: var(--ink-raised);
+  --color-graphite: var(--graphite);
+  --color-hairline: var(--hairline);
+  --color-paper: var(--paper);
+  --color-paper-dim: var(--paper-dim);
+  --color-lime: var(--lime);
+  --color-lime-deep: var(--lime-deep);
+  --color-lime-dim: var(--lime-dim);
+  --color-amber: var(--amber);
+  --color-rose: var(--rose);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-ledger: var(--font-ledger);
+
+  --radius-card: var(--radius-card);
+}
+
+* {
+  border-color: var(--hairline);
+}
+
+body {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+::selection {
+  background: var(--lime);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Torn-paper edge used at the top of the ledger card */
+.torn-edge {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='12' viewBox='0 0 40 12' preserveAspectRatio='none'%3E%3Cpath d='M0 12V4L5 8L10 2L15 7L20 3L25 8L30 2L35 7L40 4V12Z' fill='black'/%3E%3C/svg%3E");
+  mask-size: 40px 12px;
+  mask-repeat: repeat-x;
+  mask-position: top left;
+}
+
+.leader-dots {
+  background-image: radial-gradient(
+    circle,
+    var(--paper-dim) 1px,
+    transparent 1.2px
+  );
+  background-size: 6px 2px;
+  background-repeat: repeat-x;
+  background-position: bottom left;
+}
