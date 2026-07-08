@@ -14,11 +14,13 @@ begin;
 drop policy if exists "deliverables_storage_select_own" on storage.objects;
 
 drop table if exists public.audit_log cascade;
+drop table if exists public.project_events cascade;
 drop table if exists public.project_resources cascade;
 drop table if exists public.deliverables cascade;
 drop table if exists public.milestones cascade;
 drop table if exists public.payments cascade;
 drop table if exists public.projects cascade;
+drop table if exists public.client_credentials cascade;
 drop table if exists public.admins cascade;
 drop table if exists public.clients cascade;
 

@@ -66,6 +66,57 @@ export function NewClientForm() {
           />
         </div>
 
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="phone" className="mb-2 block text-sm font-medium text-paper">
+              Telefono <span className="text-paper-dim">(opcional)</span>
+            </label>
+            <input
+              id="phone"
+              name="phone"
+              type="tel"
+              placeholder="+52 55 0000 0000"
+              className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 text-paper outline-none focus:border-lime"
+            />
+          </div>
+          <div>
+            <label htmlFor="country" className="mb-2 block text-sm font-medium text-paper">
+              Pais <span className="text-paper-dim">(opcional)</span>
+            </label>
+            <input
+              id="country"
+              name="country"
+              placeholder="Mexico"
+              className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 text-paper outline-none focus:border-lime"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="industry" className="mb-2 block text-sm font-medium text-paper">
+            Rubro o rama <span className="text-paper-dim">(opcional)</span>
+          </label>
+          <input
+            id="industry"
+            name="industry"
+            placeholder="Arquitectura, ecommerce, salud, restaurante..."
+            className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 text-paper outline-none focus:border-lime"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="driveUrl" className="mb-2 block text-sm font-medium text-paper">
+            Link de Drive <span className="text-paper-dim">(opcional)</span>
+          </label>
+          <input
+            id="driveUrl"
+            name="driveUrl"
+            type="url"
+            placeholder="https://drive.google.com/..."
+            className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 text-paper outline-none focus:border-lime"
+          />
+        </div>
+
         <button
           type="submit"
           disabled={pending}

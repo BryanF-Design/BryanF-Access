@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { BriefcaseBusiness, Globe2, Phone, Plus } from "lucide-react";
 import { requireAdmin } from "@/lib/admin";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import type { Client, Project } from "@/types/database";
@@ -49,6 +49,26 @@ export default async function AdminClientsPage() {
               <p className="font-medium text-paper">{client.company ?? client.full_name}</p>
               {client.company && <p className="text-sm text-paper-dim">{client.full_name}</p>}
               <p className="mt-1 font-ledger text-xs text-paper-dim">{client.email}</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {client.industry && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-hairline px-2 py-1 text-[11px] text-paper-dim">
+                    <BriefcaseBusiness className="h-3 w-3 text-lime" aria-hidden="true" />
+                    {client.industry}
+                  </span>
+                )}
+                {client.country && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-hairline px-2 py-1 text-[11px] text-paper-dim">
+                    <Globe2 className="h-3 w-3 text-lime" aria-hidden="true" />
+                    {client.country}
+                  </span>
+                )}
+                {client.phone && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-hairline px-2 py-1 text-[11px] text-paper-dim">
+                    <Phone className="h-3 w-3 text-lime" aria-hidden="true" />
+                    {client.phone}
+                  </span>
+                )}
+              </div>
               <p className="mt-3 font-ledger text-xs text-lime">
                 {projectCountByClient.get(client.id) ?? 0} proyecto(s)
               </p>

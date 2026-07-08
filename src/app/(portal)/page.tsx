@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { StatusPill } from "@/components/status-pill";
 import { formatCurrency } from "@/lib/format";
-import type { Payment, Project } from "@/types/database";
+import type { Client, Payment, Project } from "@/types/database";
 
 export default async function ProjectsPage() {
   const supabase = await createClient();
@@ -30,11 +30,10 @@ export default async function ProjectsPage() {
   }
 
   const projectIds = projects.map((p) => p.id);
-  const { data: payments } = await supabase
-    .from("payments")
-    .select("*")
-    .in("project_id", projectIds)
-    .returns<Payment[]>();
+  const [{ data: payments }, { data: client }] = await Promise.all([
+    supabase.from("payments").select("*").in("project_id", projectIds).returns<Payment[]>(),
+    supabase.from("clients").select("*").maybeSingle<Client>(),
+  ]);
 
   const paidByProject = new Map<string, number>();
   for (const payment of payments ?? []) {
@@ -47,6 +46,30 @@ export default async function ProjectsPage() {
   return (
     <div>
       <h1 className="font-display text-3xl font-semibold text-paper">Tus proyectos</h1>
+      {client && (
+        <section className="mt-6 rounded-card border border-hairline bg-ink-raised p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="font-display text-lg font-semibold text-paper">
+                {client.company ?? client.full_name}
+              </p>
+              <p className="mt-1 text-sm text-paper-dim">
+                {[client.industry, client.country].filter(Boolean).join(" - ") || client.email}
+              </p>
+            </div>
+            {client.drive_url && (
+              <a
+                href={client.drive_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-10 items-center rounded-lg border border-hairline px-4 py-2 text-sm text-paper transition hover:border-lime hover:text-lime"
+              >
+                Abrir Drive principal
+              </a>
+            )}
+          </div>
+        </section>
+      )}
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
         {projects.map((project) => {
           const paid = paidByProject.get(project.id) ?? 0;

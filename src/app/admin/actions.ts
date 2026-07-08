@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/admin";
+import { decryptCredentialSecret, encryptCredentialSecret } from "@/lib/credentials";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 
@@ -11,12 +12,31 @@ export interface ActionState {
   ok: boolean;
   message: string;
   accessLink?: string;
+  secret?: string;
 }
+
+const optionalUrlSchema = z
+  .string()
+  .trim()
+  .optional()
+  .refine((value) => {
+    if (!value) return true;
+    try {
+      const protocol = new URL(value).protocol;
+      return protocol === "https:" || protocol === "http:";
+    } catch {
+      return false;
+    }
+  }, "Escribe una URL valida.");
 
 const newClientSchema = z.object({
   fullName: z.string().trim().min(1, "Escribe el nombre del contacto."),
   company: z.string().trim().optional(),
-  email: z.string().trim().email("Escribe un correo válido."),
+  email: z.string().trim().email("Escribe un correo valido."),
+  phone: z.string().trim().optional(),
+  country: z.string().trim().optional(),
+  industry: z.string().trim().optional(),
+  driveUrl: optionalUrlSchema,
 });
 
 const sendClientAccessSchema = z.object({
@@ -97,13 +117,17 @@ export async function createClientAccount(
     fullName: formData.get("fullName"),
     company: formData.get("company"),
     email: formData.get("email"),
+    phone: formData.get("phone"),
+    country: formData.get("country"),
+    industry: formData.get("industry"),
+    driveUrl: formData.get("driveUrl"),
   });
 
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0]?.message ?? "Revisa los datos." };
   }
 
-  const { fullName, company, email } = parsed.data;
+  const { fullName, company, email, phone, country, industry, driveUrl } = parsed.data;
   const service = createServiceRoleClient();
 
   // Creates the auth identity only — no email is sent from here. The client
@@ -130,6 +154,10 @@ export async function createClientAccount(
       full_name: fullName,
       company: company || null,
       email,
+      phone: phone || null,
+      country: country || null,
+      industry: industry || null,
+      drive_url: driveUrl || null,
     })
     .select("id")
     .single();
@@ -141,6 +169,247 @@ export async function createClientAccount(
   }
 
   redirect(`/admin/clientes/${(client as { id: string }).id}`);
+}
+
+const editClientSchema = z.object({
+  clientId: z.string().uuid("Cliente invalido."),
+  fullName: z.string().trim().min(1, "Escribe el nombre del contacto."),
+  company: z.string().trim().optional(),
+  email: z.string().trim().email("Escribe un correo valido."),
+  phone: z.string().trim().optional(),
+  country: z.string().trim().optional(),
+  industry: z.string().trim().optional(),
+  driveUrl: optionalUrlSchema,
+  notes: z.string().trim().optional(),
+});
+
+export async function updateClientProfile(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const admin = await requireAdmin();
+
+  const parsed = editClientSchema.safeParse({
+    clientId: formData.get("clientId"),
+    fullName: formData.get("fullName"),
+    company: formData.get("company"),
+    email: formData.get("email"),
+    phone: formData.get("phone"),
+    country: formData.get("country"),
+    industry: formData.get("industry"),
+    driveUrl: formData.get("driveUrl"),
+    notes: formData.get("notes"),
+  });
+
+  if (!parsed.success) {
+    return { ok: false, message: parsed.error.issues[0]?.message ?? "Revisa los datos." };
+  }
+
+  const service = createServiceRoleClient();
+  const { data: existing } = await service
+    .from("clients")
+    .select("id, auth_user_id, email")
+    .eq("id", parsed.data.clientId)
+    .maybeSingle<{ id: string; auth_user_id: string | null; email: string }>();
+
+  if (!existing) {
+    return { ok: false, message: "No encontramos ese cliente." };
+  }
+
+  const nextEmail = parsed.data.email.toLowerCase();
+  const currentEmail = existing.email.toLowerCase();
+
+  if (existing.auth_user_id && nextEmail !== currentEmail) {
+    const { error: authError } = await service.auth.admin.updateUserById(existing.auth_user_id, {
+      email: nextEmail,
+      email_confirm: true,
+    });
+
+    if (authError) {
+      return {
+        ok: false,
+        message: "No se pudo actualizar el correo de acceso en Supabase Auth.",
+      };
+    }
+  }
+
+  const { error } = await service
+    .from("clients")
+    .update({
+      full_name: parsed.data.fullName,
+      company: parsed.data.company || null,
+      email: nextEmail,
+      phone: parsed.data.phone || null,
+      country: parsed.data.country || null,
+      industry: parsed.data.industry || null,
+      drive_url: parsed.data.driveUrl || null,
+      notes: parsed.data.notes || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", parsed.data.clientId);
+
+  await service.from("audit_log").insert({
+    actor_email: admin.email,
+    event: error ? "admin_client_update_failed" : "admin_client_updated",
+    metadata: {
+      client_id: parsed.data.clientId,
+      email: nextEmail,
+      error: error?.message ?? null,
+    },
+  });
+
+  if (error) {
+    return { ok: false, message: "No se pudo guardar el cliente. Intenta de nuevo." };
+  }
+
+  revalidatePath(`/admin/clientes/${parsed.data.clientId}`);
+  revalidatePath("/admin/clientes");
+  revalidatePath("/admin");
+  return { ok: true, message: "Cliente actualizado." };
+}
+
+const credentialSchema = z.object({
+  clientId: z.string().uuid("Cliente invalido."),
+  label: z.string().trim().min(1, "Escribe un nombre para el acceso."),
+  provider: z.string().trim().optional(),
+  loginUrl: optionalUrlSchema,
+  username: z.string().trim().optional(),
+  secret: z.string().optional(),
+  notes: z.string().trim().optional(),
+});
+
+export async function createClientCredential(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const admin = await requireAdmin();
+
+  const parsed = credentialSchema.safeParse({
+    clientId: formData.get("clientId"),
+    label: formData.get("label"),
+    provider: formData.get("provider"),
+    loginUrl: formData.get("loginUrl"),
+    username: formData.get("username"),
+    secret: formData.get("secret"),
+    notes: formData.get("notes"),
+  });
+
+  if (!parsed.success) {
+    return { ok: false, message: parsed.error.issues[0]?.message ?? "Revisa los datos." };
+  }
+
+  const service = createServiceRoleClient();
+  const secret = parsed.data.secret?.trim();
+  const encrypted = secret ? encryptCredentialSecret(secret) : null;
+
+  const { error } = await service.from("client_credentials").insert({
+    client_id: parsed.data.clientId,
+    label: parsed.data.label,
+    provider: parsed.data.provider || null,
+    login_url: parsed.data.loginUrl || null,
+    username: parsed.data.username || null,
+    secret_encrypted: encrypted?.secret_encrypted ?? null,
+    secret_iv: encrypted?.secret_iv ?? null,
+    secret_tag: encrypted?.secret_tag ?? null,
+    notes: parsed.data.notes || null,
+  });
+
+  await service.from("audit_log").insert({
+    actor_email: admin.email,
+    event: error ? "admin_client_credential_create_failed" : "admin_client_credential_created",
+    metadata: {
+      client_id: parsed.data.clientId,
+      label: parsed.data.label,
+      error: error?.message ?? null,
+    },
+  });
+
+  if (error) {
+    return { ok: false, message: "No se pudo guardar el acceso privado." };
+  }
+
+  revalidatePath(`/admin/clientes/${parsed.data.clientId}`);
+  return { ok: true, message: "Acceso privado guardado." };
+}
+
+export async function revealClientCredentialSecret(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const admin = await requireAdmin();
+  const credentialId = formData.get("credentialId");
+  const clientId = formData.get("clientId");
+
+  if (typeof credentialId !== "string" || typeof clientId !== "string") {
+    return { ok: false, message: "Acceso invalido." };
+  }
+
+  const limit = await checkRateLimit(`credential-reveal:${admin.id}`, 20, 10 * 60_000);
+  if (!limit.ok) {
+    return { ok: false, message: "Demasiados intentos. Espera un minuto y vuelve a intentar." };
+  }
+
+  const service = createServiceRoleClient();
+  const { data: credential } = await service
+    .from("client_credentials")
+    .select("id, client_id, label, secret_encrypted, secret_iv, secret_tag")
+    .eq("id", credentialId)
+    .eq("client_id", clientId)
+    .maybeSingle<{
+      id: string;
+      client_id: string;
+      label: string;
+      secret_encrypted: string | null;
+      secret_iv: string | null;
+      secret_tag: string | null;
+    }>();
+
+  if (!credential) {
+    return { ok: false, message: "No encontramos ese acceso." };
+  }
+
+  try {
+    const secret = decryptCredentialSecret(credential);
+
+    await service.from("audit_log").insert({
+      actor_email: admin.email,
+      event: "admin_client_credential_revealed",
+      metadata: { client_id: clientId, credential_id: credentialId, label: credential.label },
+    });
+
+    if (!secret) {
+      return { ok: false, message: "Este acceso no tiene secreto guardado." };
+    }
+
+    return { ok: true, message: "Secreto revelado.", secret };
+  } catch {
+    await service.from("audit_log").insert({
+      actor_email: admin.email,
+      event: "admin_client_credential_reveal_failed",
+      metadata: { client_id: clientId, credential_id: credentialId },
+    });
+
+    return {
+      ok: false,
+      message: "No se pudo descifrar. Revisa que CREDENTIALS_ENCRYPTION_KEY no haya cambiado.",
+    };
+  }
+}
+
+export async function deleteClientCredential(formData: FormData) {
+  const admin = await requireAdmin();
+  const credentialId = formData.get("credentialId");
+  const clientId = formData.get("clientId");
+  if (typeof credentialId !== "string" || typeof clientId !== "string") return;
+
+  const service = createServiceRoleClient();
+  await service.from("client_credentials").delete().eq("id", credentialId).eq("client_id", clientId);
+  await service.from("audit_log").insert({
+    actor_email: admin.email,
+    event: "admin_client_credential_deleted",
+    metadata: { client_id: clientId, credential_id: credentialId },
+  });
+  revalidatePath(`/admin/clientes/${clientId}`);
 }
 
 export async function sendClientAccessLink(
@@ -269,8 +538,47 @@ const newProjectSchema = z.object({
   targetEndDate: z.string().optional(),
 });
 
+const projectEventTypeSchema = z.enum([
+  "project",
+  "payment",
+  "milestone",
+  "deliverable",
+  "resource",
+  "content",
+  "meeting",
+  "review",
+  "other",
+]);
+
+const projectEventVisibilitySchema = z.enum(["client", "admin"]);
+
+type ServiceRoleClient = ReturnType<typeof createServiceRoleClient>;
+
+async function recordProjectEvent(
+  service: ServiceRoleClient,
+  input: {
+    projectId: string;
+    title: string;
+    description?: string | null;
+    eventType?: z.infer<typeof projectEventTypeSchema>;
+    eventDate?: string | null;
+    visibility?: z.infer<typeof projectEventVisibilitySchema>;
+    createdBy?: string | null;
+  },
+) {
+  await service.from("project_events").insert({
+    project_id: input.projectId,
+    title: input.title,
+    description: input.description || null,
+    event_type: input.eventType ?? "other",
+    event_date: input.eventDate || new Date().toISOString().slice(0, 10),
+    visibility: input.visibility ?? "client",
+    created_by: input.createdBy || null,
+  });
+}
+
 export async function createProject(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const parsed = newProjectSchema.safeParse({
     clientId: formData.get("clientId"),
@@ -307,7 +615,61 @@ export async function createProject(_prev: ActionState, formData: FormData): Pro
     return { ok: false, message: "No se pudo crear el proyecto. Intenta de nuevo." };
   }
 
-  redirect(`/admin/proyectos/${(project as { id: string }).id}`);
+  const projectId = (project as { id: string }).id;
+  await recordProjectEvent(service, {
+    projectId,
+    title: "Proyecto activado",
+    description: summary || null,
+    eventType: "project",
+    eventDate: startDate || null,
+    createdBy: admin.email,
+  });
+
+  redirect(`/admin/proyectos/${projectId}`);
+}
+
+const newProjectEventSchema = z.object({
+  projectId: z.string().uuid("Proyecto invalido."),
+  title: z.string().trim().min(1, "Escribe el titulo del evento."),
+  description: z.string().trim().optional(),
+  eventType: projectEventTypeSchema,
+  eventDate: z.string().min(1, "Elige una fecha."),
+  visibility: projectEventVisibilitySchema,
+});
+
+export async function createProjectEvent(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const admin = await requireAdmin();
+
+  const parsed = newProjectEventSchema.safeParse({
+    projectId: formData.get("projectId"),
+    title: formData.get("title"),
+    description: formData.get("description"),
+    eventType: formData.get("eventType"),
+    eventDate: formData.get("eventDate"),
+    visibility: formData.get("visibility"),
+  });
+
+  if (!parsed.success) {
+    return { ok: false, message: parsed.error.issues[0]?.message ?? "Revisa los datos." };
+  }
+
+  const service = createServiceRoleClient();
+  await recordProjectEvent(service, {
+    projectId: parsed.data.projectId,
+    title: parsed.data.title,
+    description: parsed.data.description || null,
+    eventType: parsed.data.eventType,
+    eventDate: parsed.data.eventDate,
+    visibility: parsed.data.visibility,
+    createdBy: admin.email,
+  });
+
+  revalidatePath(`/admin/proyectos/${parsed.data.projectId}`);
+  revalidatePath(`/proyecto/${parsed.data.projectId}`);
+  return { ok: true, message: "Evento agregado al calendario." };
 }
 
 const projectStatusSchema = z.object({
@@ -316,7 +678,7 @@ const projectStatusSchema = z.object({
 });
 
 export async function updateProjectStatus(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const parsed = projectStatusSchema.safeParse({
     projectId: formData.get("projectId"),
     status: formData.get("status"),
@@ -325,7 +687,15 @@ export async function updateProjectStatus(formData: FormData) {
 
   const service = createServiceRoleClient();
   await service.from("projects").update({ status: parsed.data.status }).eq("id", parsed.data.projectId);
+  await recordProjectEvent(service, {
+    projectId: parsed.data.projectId,
+    title: "Estatus actualizado",
+    description: `El proyecto cambio a ${parsed.data.status}.`,
+    eventType: "project",
+    createdBy: admin.email,
+  });
   revalidatePath(`/admin/proyectos/${parsed.data.projectId}`);
+  revalidatePath(`/proyecto/${parsed.data.projectId}`);
   revalidatePath("/admin");
 }
 
@@ -340,7 +710,7 @@ const editProjectSchema = z.object({
 });
 
 export async function updateProject(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const parsed = editProjectSchema.safeParse({
     projectId: formData.get("projectId"),
@@ -371,7 +741,17 @@ export async function updateProject(_prev: ActionState, formData: FormData): Pro
     })
     .eq("id", projectId);
 
+  await recordProjectEvent(service, {
+    projectId,
+    title: "Datos del proyecto actualizados",
+    description: summary || null,
+    eventType: "project",
+    eventDate: startDate || null,
+    createdBy: admin.email,
+  });
+
   revalidatePath(`/admin/proyectos/${projectId}`);
+  revalidatePath(`/proyecto/${projectId}`);
   revalidatePath("/admin");
   return { ok: true, message: "Cambios guardados." };
 }
@@ -388,7 +768,7 @@ const newMilestoneSchema = z.object({
 });
 
 export async function createMilestone(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const parsed = newMilestoneSchema.safeParse({
     projectId: formData.get("projectId"),
@@ -417,7 +797,17 @@ export async function createMilestone(_prev: ActionState, formData: FormData): P
     position: (count ?? 0) + 1,
   });
 
+  await recordProjectEvent(service, {
+    projectId,
+    title: `Etapa agregada: ${title}`,
+    description: description || null,
+    eventType: "milestone",
+    eventDate: dueDate || null,
+    createdBy: admin.email,
+  });
+
   revalidatePath(`/admin/proyectos/${projectId}`);
+  revalidatePath(`/proyecto/${projectId}`);
   return { ok: true, message: "" };
 }
 
@@ -428,7 +818,7 @@ const milestoneStatusSchema = z.object({
 });
 
 export async function updateMilestoneStatus(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const parsed = milestoneStatusSchema.safeParse({
     milestoneId: formData.get("milestoneId"),
     projectId: formData.get("projectId"),
@@ -445,7 +835,22 @@ export async function updateMilestoneStatus(formData: FormData) {
     })
     .eq("id", parsed.data.milestoneId);
 
+  const { data: milestone } = await service
+    .from("milestones")
+    .select("title")
+    .eq("id", parsed.data.milestoneId)
+    .maybeSingle<{ title: string }>();
+
+  await recordProjectEvent(service, {
+    projectId: parsed.data.projectId,
+    title: `Etapa actualizada: ${milestone?.title ?? "Sin titulo"}`,
+    description: `Estatus: ${parsed.data.status}.`,
+    eventType: "milestone",
+    createdBy: admin.email,
+  });
+
   revalidatePath(`/admin/proyectos/${parsed.data.projectId}`);
+  revalidatePath(`/proyecto/${parsed.data.projectId}`);
 }
 
 export async function deleteMilestone(formData: FormData) {
@@ -457,6 +862,7 @@ export async function deleteMilestone(formData: FormData) {
   const service = createServiceRoleClient();
   await service.from("milestones").delete().eq("id", milestoneId);
   revalidatePath(`/admin/proyectos/${projectId}`);
+  revalidatePath(`/proyecto/${projectId}`);
 }
 
 const reorderSchema = z.object({
@@ -499,6 +905,7 @@ export async function moveMilestone(formData: FormData) {
   await service.from("milestones").update({ position: other.position }).eq("id", current.id);
   await service.from("milestones").update({ position }).eq("id", other.id);
   revalidatePath(`/admin/proyectos/${parsed.data.projectId}`);
+  revalidatePath(`/proyecto/${parsed.data.projectId}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -535,7 +942,7 @@ function isBlockedUpload(file: File) {
 }
 
 export async function createDeliverable(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const parsed = newDeliverableSchema.safeParse({
     projectId: formData.get("projectId"),
@@ -588,7 +995,16 @@ export async function createDeliverable(_prev: ActionState, formData: FormData):
     delivered_at: isDelivered ? new Date().toISOString() : null,
   });
 
+  await recordProjectEvent(service, {
+    projectId,
+    title: `Entregable agregado: ${name}`,
+    description: description || null,
+    eventType: "deliverable",
+    createdBy: admin.email,
+  });
+
   revalidatePath(`/admin/proyectos/${projectId}`);
+  revalidatePath(`/proyecto/${projectId}`);
   return { ok: true, message: "" };
 }
 
@@ -599,7 +1015,7 @@ const deliverableStatusSchema = z.object({
 });
 
 export async function updateDeliverableStatus(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const parsed = deliverableStatusSchema.safeParse({
     deliverableId: formData.get("deliverableId"),
     projectId: formData.get("projectId"),
@@ -616,7 +1032,22 @@ export async function updateDeliverableStatus(formData: FormData) {
     })
     .eq("id", parsed.data.deliverableId);
 
+  const { data: deliverable } = await service
+    .from("deliverables")
+    .select("name")
+    .eq("id", parsed.data.deliverableId)
+    .maybeSingle<{ name: string }>();
+
+  await recordProjectEvent(service, {
+    projectId: parsed.data.projectId,
+    title: `Entregable actualizado: ${deliverable?.name ?? "Sin nombre"}`,
+    description: `Estatus: ${parsed.data.status}.`,
+    eventType: "deliverable",
+    createdBy: admin.email,
+  });
+
   revalidatePath(`/admin/proyectos/${parsed.data.projectId}`);
+  revalidatePath(`/proyecto/${parsed.data.projectId}`);
 }
 
 export async function deleteDeliverable(formData: FormData) {
@@ -640,6 +1071,7 @@ export async function deleteDeliverable(formData: FormData) {
 
   await service.from("deliverables").delete().eq("id", deliverableId);
   revalidatePath(`/admin/proyectos/${projectId}`);
+  revalidatePath(`/proyecto/${projectId}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -665,7 +1097,7 @@ export async function createProjectResource(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const parsed = newResourceSchema.safeParse({
     projectId: formData.get("projectId"),
@@ -694,6 +1126,14 @@ export async function createProjectResource(
     resource_type: resourceType,
     url,
     position: (count ?? 0) + 1,
+  });
+
+  await recordProjectEvent(service, {
+    projectId,
+    title: `Recurso agregado: ${title}`,
+    description: description || null,
+    eventType: "resource",
+    createdBy: admin.email,
   });
 
   revalidatePath(`/admin/proyectos/${projectId}`);
@@ -726,7 +1166,7 @@ const newPaymentSchema = z.object({
 });
 
 export async function createPayment(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const parsed = newPaymentSchema.safeParse({
     projectId: formData.get("projectId"),
@@ -751,7 +1191,17 @@ export async function createPayment(_prev: ActionState, formData: FormData): Pro
     note: note || null,
   });
 
+  await recordProjectEvent(service, {
+    projectId,
+    title: "Pago registrado",
+    description: note || method || null,
+    eventType: "payment",
+    eventDate: paidAt,
+    createdBy: admin.email,
+  });
+
   revalidatePath(`/admin/proyectos/${projectId}`);
+  revalidatePath(`/proyecto/${projectId}`);
   return { ok: true, message: "" };
 }
 
@@ -764,4 +1214,5 @@ export async function deletePayment(formData: FormData) {
   const service = createServiceRoleClient();
   await service.from("payments").delete().eq("id", paymentId);
   revalidatePath(`/admin/proyectos/${projectId}`);
+  revalidatePath(`/proyecto/${projectId}`);
 }

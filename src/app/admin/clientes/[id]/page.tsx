@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, BriefcaseBusiness, FolderKanban, Globe2, Phone, Plus } from "lucide-react";
 import { requireAdmin } from "@/lib/admin";
 import { createServiceRoleClient } from "@/lib/supabase/server";
+import { ProjectChangeCalendar } from "@/components/project-change-calendar";
 import { StatusPill } from "@/components/status-pill";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { ClientCredentialList, EditClientForm, NewClientCredentialForm, type CredentialSummary } from "./forms";
 import { SendAccessLinkForm } from "./send-access-link-form";
-import type { Client, Payment, Project } from "@/types/database";
+import type { Client, ClientCredential, Payment, Project, ProjectEvent } from "@/types/database";
 
 export default async function AdminClientDetailPage({
   params,
@@ -21,12 +23,26 @@ export default async function AdminClientDetailPage({
   const client = clientData as Client | null;
   if (!client) notFound();
 
-  const { data: projectsData } = await service
-    .from("projects")
-    .select("*")
-    .eq("client_id", id)
-    .order("created_at", { ascending: false });
+  const [{ data: projectsData }, { data: credentialsData }] = await Promise.all([
+    service.from("projects").select("*").eq("client_id", id).order("created_at", { ascending: false }),
+    service
+      .from("client_credentials")
+      .select("*")
+      .eq("client_id", id)
+      .order("created_at", { ascending: false }),
+  ]);
   const projects = (projectsData ?? []) as Project[];
+  const credentials = ((credentialsData ?? []) as ClientCredential[]).map<CredentialSummary>((credential) => ({
+    id: credential.id,
+    client_id: credential.client_id,
+    label: credential.label,
+    provider: credential.provider,
+    login_url: credential.login_url,
+    username: credential.username,
+    notes: credential.notes,
+    created_at: credential.created_at,
+    has_secret: Boolean(credential.secret_encrypted && credential.secret_iv && credential.secret_tag),
+  }));
 
   const projectIds = projects.map((p) => p.id);
   const { data: paymentsData } =
@@ -34,6 +50,16 @@ export default async function AdminClientDetailPage({
       ? await service.from("payments").select("*").in("project_id", projectIds)
       : { data: [] };
   const payments = (paymentsData ?? []) as Payment[];
+  const { data: eventsData } =
+    projectIds.length > 0
+      ? await service
+          .from("project_events")
+          .select("*")
+          .in("project_id", projectIds)
+          .order("event_date", { ascending: false })
+          .order("created_at", { ascending: false })
+      : { data: [] };
+  const events = (eventsData ?? []) as ProjectEvent[];
 
   const paidByProject = new Map<string, number>();
   for (const payment of payments) {
@@ -60,6 +86,37 @@ export default async function AdminClientDetailPage({
           <p className="mt-1 font-ledger text-xs text-paper-dim">
             Cliente desde {formatDate(client.created_at)}
           </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {client.phone && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline px-3 py-1 text-xs text-paper-dim">
+                <Phone className="h-3.5 w-3.5 text-lime" aria-hidden="true" />
+                {client.phone}
+              </span>
+            )}
+            {client.country && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline px-3 py-1 text-xs text-paper-dim">
+                <Globe2 className="h-3.5 w-3.5 text-lime" aria-hidden="true" />
+                {client.country}
+              </span>
+            )}
+            {client.industry && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline px-3 py-1 text-xs text-paper-dim">
+                <BriefcaseBusiness className="h-3.5 w-3.5 text-lime" aria-hidden="true" />
+                {client.industry}
+              </span>
+            )}
+            {client.drive_url && (
+              <a
+                href={client.drive_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-full border border-hairline px-3 py-1 text-xs text-lime transition hover:border-lime"
+              >
+                <FolderKanban className="h-3.5 w-3.5" aria-hidden="true" />
+                Drive principal
+              </a>
+            )}
+          </div>
         </div>
         <div className="flex flex-wrap items-start gap-3">
           <SendAccessLinkForm clientId={client.id} />
@@ -73,7 +130,9 @@ export default async function AdminClientDetailPage({
         </div>
       </div>
 
-      <h2 className="mb-4 mt-10 font-display text-lg font-semibold text-paper">Proyectos</h2>
+      <div className="mt-10 grid gap-8 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <div className="min-w-0">
+          <h2 className="mb-4 font-display text-lg font-semibold text-paper">Proyectos</h2>
 
       {projects.length === 0 ? (
         <div className="rounded-card border border-dashed border-hairline p-8 text-center">
@@ -104,6 +163,31 @@ export default async function AdminClientDetailPage({
           })}
         </div>
       )}
+
+          <section className="mt-10">
+            <h2 className="mb-4 font-display text-lg font-semibold text-paper">Calendario del cliente</h2>
+            <ProjectChangeCalendar
+              events={events}
+              emptyMessage="Todavia no hay cambios registrados para los proyectos de este cliente."
+              showVisibility
+            />
+          </section>
+        </div>
+
+        <aside className="grid content-start gap-6">
+          <EditClientForm client={client} />
+          <section>
+            <div className="mb-3">
+              <h2 className="font-display text-lg font-semibold text-paper">Accesos privados</h2>
+              <p className="mt-1 text-sm text-paper-dim">Host, dominios y datos sensibles solo para admin.</p>
+            </div>
+            <ClientCredentialList clientId={client.id} credentials={credentials} />
+            <div className="mt-4">
+              <NewClientCredentialForm clientId={client.id} />
+            </div>
+          </section>
+        </aside>
+      </div>
     </div>
   );
 }

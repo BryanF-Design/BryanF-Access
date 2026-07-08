@@ -14,11 +14,39 @@ create table if not exists public.clients (
   full_name text not null,
   company text,
   email text not null,
+  phone text,
+  country text,
+  industry text,
+  drive_url text,
+  notes text,
   avatar_url text,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create index if not exists clients_auth_user_id_idx on public.clients (auth_user_id);
+create index if not exists clients_email_idx on public.clients (lower(email));
+
+-- ---------------------------------------------------------------------------
+-- client_credentials: sensitive host/provider credentials, encrypted by the
+-- app before insert and readable only through admin Server Actions.
+-- ---------------------------------------------------------------------------
+create table if not exists public.client_credentials (
+  id uuid primary key default gen_random_uuid(),
+  client_id uuid not null references public.clients (id) on delete cascade,
+  label text not null,
+  provider text,
+  login_url text,
+  username text,
+  secret_encrypted text,
+  secret_iv text,
+  secret_tag text,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists client_credentials_client_id_idx on public.client_credentials (client_id);
 
 -- ---------------------------------------------------------------------------
 -- admins: BryanF Design staff who can access /admin. Same 1:1-with-auth-user
@@ -126,6 +154,26 @@ create table if not exists public.project_resources (
 create index if not exists project_resources_project_id_idx on public.project_resources (project_id);
 
 -- ---------------------------------------------------------------------------
+-- project_events: shared content/change calendar. Client-visible rows are
+-- shown in the portal; admin-only rows stay private to BryanF.
+-- ---------------------------------------------------------------------------
+create table if not exists public.project_events (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects (id) on delete cascade,
+  title text not null,
+  description text,
+  event_type text not null default 'other'
+    check (event_type in ('project', 'payment', 'milestone', 'deliverable', 'resource', 'content', 'meeting', 'review', 'other')),
+  event_date date not null default current_date,
+  visibility text not null default 'client'
+    check (visibility in ('client', 'admin')),
+  created_by text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists project_events_project_id_date_idx on public.project_events (project_id, event_date desc);
+
+-- ---------------------------------------------------------------------------
 -- audit_log: written only by the server (service role); never exposed to clients
 -- ---------------------------------------------------------------------------
 create table if not exists public.audit_log (
@@ -142,11 +190,13 @@ create table if not exists public.audit_log (
 -- ---------------------------------------------------------------------------
 alter table public.admins enable row level security;
 alter table public.clients enable row level security;
+alter table public.client_credentials enable row level security;
 alter table public.projects enable row level security;
 alter table public.payments enable row level security;
 alter table public.milestones enable row level security;
 alter table public.deliverables enable row level security;
 alter table public.project_resources enable row level security;
+alter table public.project_events enable row level security;
 alter table public.audit_log enable row level security;
 
 -- admins: a signed-in user can only ever see their own admin record — this is
@@ -208,7 +258,8 @@ drop policy if exists "project_resources_select_own" on public.project_resources
 create policy "project_resources_select_own"
   on public.project_resources for select
   using (
-    project_id in (
+    resource_type <> 'credential'
+    and project_id in (
       select p.id from public.projects p
       join public.clients c on c.id = p.client_id
       where c.auth_user_id = auth.uid()
@@ -220,6 +271,22 @@ create policy "project_resources_select_own"
 -- server-side service-role key (which bypasses RLS) writes to this table.
 
 -- ---------------------------------------------------------------------------
+drop policy if exists "project_events_select_own_visible" on public.project_events;
+create policy "project_events_select_own_visible"
+  on public.project_events for select
+  using (
+    visibility = 'client'
+    and project_id in (
+      select p.id from public.projects p
+      join public.clients c on c.id = p.client_id
+      where c.auth_user_id = auth.uid()
+    )
+  );
+
+-- client_credentials: no policies on purpose. With RLS enabled, anon and
+-- authenticated clients cannot read or write credentials. Admin operations use
+-- the server-only service role and secrets are encrypted before storage.
+
 -- Storage: private bucket for deliverable files
 -- ---------------------------------------------------------------------------
 insert into storage.buckets (id, name, public)

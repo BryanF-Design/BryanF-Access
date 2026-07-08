@@ -15,6 +15,19 @@ export type DeliverableStatus =
 
 export type ProjectResourceType = "drive" | "url" | "tutorial" | "credential" | "other";
 
+export type ProjectEventType =
+  | "project"
+  | "payment"
+  | "milestone"
+  | "deliverable"
+  | "resource"
+  | "content"
+  | "meeting"
+  | "review"
+  | "other";
+
+export type ProjectEventVisibility = "client" | "admin";
+
 export interface Admin {
   id: string;
   auth_user_id: string;
@@ -29,8 +42,29 @@ export interface Client {
   full_name: string;
   company: string | null;
   email: string;
+  phone: string | null;
+  country: string | null;
+  industry: string | null;
+  drive_url: string | null;
+  notes: string | null;
   avatar_url: string | null;
   created_at: string;
+  updated_at: string;
+}
+
+export interface ClientCredential {
+  id: string;
+  client_id: string;
+  label: string;
+  provider: string | null;
+  login_url: string | null;
+  username: string | null;
+  secret_encrypted: string | null;
+  secret_iv: string | null;
+  secret_tag: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Project {
@@ -92,6 +126,18 @@ export interface ProjectResource {
   created_at: string;
 }
 
+export interface ProjectEvent {
+  id: string;
+  project_id: string;
+  title: string;
+  description: string | null;
+  event_type: ProjectEventType;
+  event_date: string;
+  visibility: ProjectEventVisibility;
+  created_by: string | null;
+  created_at: string;
+}
+
 export interface AuditLogEntry {
   id: string;
   actor_email: string | null;
@@ -114,6 +160,12 @@ export interface Database {
         Row: Client;
         Insert: Partial<Client>;
         Update: Partial<Client>;
+        Relationships: [];
+      };
+      client_credentials: {
+        Row: ClientCredential;
+        Insert: Partial<ClientCredential>;
+        Update: Partial<ClientCredential>;
         Relationships: [];
       };
       projects: {
@@ -144,6 +196,12 @@ export interface Database {
         Row: ProjectResource;
         Insert: Partial<ProjectResource>;
         Update: Partial<ProjectResource>;
+        Relationships: [];
+      };
+      project_events: {
+        Row: ProjectEvent;
+        Insert: Partial<ProjectEvent>;
+        Update: Partial<ProjectEvent>;
         Relationships: [];
       };
       audit_log: {

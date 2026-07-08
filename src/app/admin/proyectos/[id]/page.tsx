@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/admin";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { Ledger } from "@/components/ledger";
 import { AutoSubmitSelect } from "@/components/auto-submit-select";
+import { ProjectChangeCalendar } from "@/components/project-change-calendar";
 import { formatShortDate } from "@/lib/format";
 import {
   deleteDeliverable,
@@ -16,8 +17,23 @@ import {
   updateMilestoneStatus,
   updateProjectStatus,
 } from "@/app/admin/actions";
-import { EditProjectForm, NewDeliverableForm, NewMilestoneForm, NewPaymentForm, NewResourceForm } from "./forms";
-import type { Client, Deliverable, Milestone, Payment, Project, ProjectResource } from "@/types/database";
+import {
+  EditProjectForm,
+  NewDeliverableForm,
+  NewMilestoneForm,
+  NewPaymentForm,
+  NewProjectEventForm,
+  NewResourceForm,
+} from "./forms";
+import type {
+  Client,
+  Deliverable,
+  Milestone,
+  Payment,
+  Project,
+  ProjectEvent,
+  ProjectResource,
+} from "@/types/database";
 
 const PROJECT_STATUS_OPTIONS = [
   { value: "planeacion", label: "En planeación" },
@@ -55,12 +71,19 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
     { data: deliverablesData },
     { data: paymentsData },
     { data: resourcesData },
+    { data: eventsData },
   ] = await Promise.all([
     service.from("clients").select("*").eq("id", project.client_id).maybeSingle(),
     service.from("milestones").select("*").eq("project_id", id).order("position", { ascending: true }),
     service.from("deliverables").select("*").eq("project_id", id).order("created_at", { ascending: false }),
     service.from("payments").select("*").eq("project_id", id).order("paid_at", { ascending: false }),
     service.from("project_resources").select("*").eq("project_id", id).order("position", { ascending: true }),
+    service
+      .from("project_events")
+      .select("*")
+      .eq("project_id", id)
+      .order("event_date", { ascending: false })
+      .order("created_at", { ascending: false }),
   ]);
 
   const client = clientData as Client | null;
@@ -68,6 +91,7 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
   const deliverables = (deliverablesData ?? []) as Deliverable[];
   const payments = (paymentsData ?? []) as Payment[];
   const resources = (resourcesData ?? []) as ProjectResource[];
+  const events = (eventsData ?? []) as ProjectEvent[];
   const paidTotal = payments.reduce((sum, p) => sum + Number(p.amount), 0);
 
   return (
@@ -99,6 +123,21 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
         />
         <EditProjectForm project={project} />
       </div>
+
+      <section className="mt-12">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="font-display text-lg font-semibold text-paper">Calendario de cambios</h2>
+            <p className="mt-1 text-sm text-paper-dim">
+              Bitacora compartida para contenidos, revisiones y cambios importantes.
+            </p>
+          </div>
+        </div>
+        <ProjectChangeCalendar events={events} showVisibility />
+        <div className="mt-4">
+          <NewProjectEventForm projectId={project.id} />
+        </div>
+      </section>
 
       {/* Pagos */}
       <section className="mt-12">

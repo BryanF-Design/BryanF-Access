@@ -5,6 +5,7 @@ import {
   createDeliverable,
   createMilestone,
   createPayment,
+  createProjectEvent,
   createProjectResource,
   updateProject,
   type ActionState,
@@ -335,6 +336,95 @@ export function NewResourceForm({ projectId }: { projectId: string }) {
       >
         {pending ? "Guardando..." : "Agregar recurso"}
       </button>
+      <ErrorMessage state={state} />
+    </form>
+  );
+}
+
+export function NewProjectEventForm({ projectId }: { projectId: string }) {
+  const [state, formAction, pending] = useActionState(createProjectEvent, initialState);
+  const formRef = useRef<HTMLFormElement>(null);
+  useResetOnSuccess(state, formRef);
+
+  return (
+    <form
+      ref={formRef}
+      action={formAction}
+      className="grid gap-3 rounded-card border border-dashed border-hairline p-4"
+    >
+      <input type="hidden" name="projectId" value={projectId} />
+      <div className="grid gap-3 sm:grid-cols-[1fr_180px_180px]">
+        <div>
+          <label htmlFor="event-title" className="mb-2 block text-sm font-medium text-paper">
+            Cambio o contenido
+          </label>
+          <input
+            id="event-title"
+            name="title"
+            required
+            placeholder="Se actualizo la propuesta de contenidos"
+            className="w-full rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
+          />
+        </div>
+        <div>
+          <label htmlFor="event-date" className="mb-2 block text-sm font-medium text-paper">
+            Fecha
+          </label>
+          <input
+            id="event-date"
+            name="eventDate"
+            type="date"
+            required
+            defaultValue={new Date().toISOString().slice(0, 10)}
+            className="w-full rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
+          />
+        </div>
+        <div>
+          <label htmlFor="event-type" className="mb-2 block text-sm font-medium text-paper">
+            Tipo
+          </label>
+          <select
+            id="event-type"
+            name="eventType"
+            defaultValue="content"
+            className="w-full rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
+          >
+            <option value="content">Contenido</option>
+            <option value="review">Revision</option>
+            <option value="meeting">Reunion</option>
+            <option value="project">Proyecto</option>
+            <option value="milestone">Etapa</option>
+            <option value="deliverable">Entregable</option>
+            <option value="resource">Recurso</option>
+            <option value="payment">Pago</option>
+            <option value="other">Nota</option>
+          </select>
+        </div>
+      </div>
+      <textarea
+        name="description"
+        rows={2}
+        placeholder="Detalle breve para que todos sepan que se movio o que deben revisar."
+        className="rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
+      />
+      <div className="grid gap-3 sm:grid-cols-[220px_auto]">
+        <select
+          name="visibility"
+          defaultValue="client"
+          className="rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
+        >
+          <option value="client">Visible para cliente</option>
+          <option value="admin">Solo interno</option>
+        </select>
+        <button
+          type="submit"
+          disabled={pending}
+          className="justify-self-start rounded-lg border border-hairline px-4 py-2 text-sm text-paper transition hover:border-lime hover:text-lime disabled:opacity-60"
+        >
+          {pending ? "Agregando..." : "Agregar al calendario"}
+        </button>
+      </div>
+      {state.ok && state.message && <p className="text-sm text-lime">{state.message}</p>}
       <ErrorMessage state={state} />
     </form>
   );
