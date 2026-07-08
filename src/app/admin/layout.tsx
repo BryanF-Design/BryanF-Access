@@ -1,10 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
-import { requireAdmin } from "@/lib/admin";
+import { getCurrentAdmin } from "@/lib/admin";
 import { signOut } from "@/lib/actions/sign-out";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const admin = await requireAdmin();
+  const admin = await getCurrentAdmin();
+
+  if (!admin) {
+    return children;
+  }
 
   return (
     <div className="flex min-h-dvh flex-1 flex-col">

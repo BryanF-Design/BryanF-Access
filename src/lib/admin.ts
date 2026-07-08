@@ -1,5 +1,8 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { verifyAdminSessionToken, ADMIN_SESSION_COOKIE, getConfiguredAdminEmail } from "@/lib/admin-session";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 import type { Admin } from "@/types/database";
 
 /**
@@ -13,7 +16,7 @@ export async function getCurrentAdmin(): Promise<Admin | null> {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return null;
+  if (!user) return getAdminFromSignedCookie();
 
   const { data } = await supabase
     .from("admins")
@@ -24,6 +27,22 @@ export async function getCurrentAdmin(): Promise<Admin | null> {
   return data;
 }
 
+async function getAdminFromSignedCookie(): Promise<Admin | null> {
+  const cookieStore = await cookies();
+  const email = verifyAdminSessionToken(cookieStore.get(ADMIN_SESSION_COOKIE)?.value);
+
+  if (!email || email !== getConfiguredAdminEmail()) return null;
+
+  const service = createServiceRoleClient();
+  const { data } = await service
+    .from("admins")
+    .select("*")
+    .eq("email", email)
+    .maybeSingle<Admin>();
+
+  return data ?? null;
+}
+
 /**
  * Gate for every admin page and every privileged Server Action. Never trust
  * a check performed only in a layout — actions can be invoked directly, so
@@ -31,6 +50,6 @@ export async function getCurrentAdmin(): Promise<Admin | null> {
  */
 export async function requireAdmin(): Promise<Admin> {
   const admin = await getCurrentAdmin();
-  if (!admin) redirect("/login");
+  if (!admin) redirect("/admin/login");
   return admin;
 }

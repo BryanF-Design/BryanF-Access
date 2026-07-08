@@ -27,7 +27,7 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${origin}${next.startsWith("/admin") ? next : "/admin"}`);
       }
 
-      return NextResponse.redirect(`${origin}${next.startsWith("/admin") ? "/" : next}`);
+      return NextResponse.redirect(`${origin}${next.startsWith("/admin") ? "/admin/login" : next}`);
     }
   }
 
