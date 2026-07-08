@@ -11,18 +11,66 @@ export interface LoginActionState {
   message: string;
 }
 
-async function logAttempt(event: string, email: string | null, ip: string) {
+type LoginAccountKind = "admin" | "client" | "unknown";
+
+const LOGIN_RATE_LIMITS: Record<
+  LoginAccountKind,
+  { emailLimit: number; emailWindowMs: number; ipLimit: number; ipWindowMs: number }
+> = {
+  admin: {
+    emailLimit: 12,
+    emailWindowMs: 10 * 60_000,
+    ipLimit: 80,
+    ipWindowMs: 10 * 60_000,
+  },
+  client: {
+    emailLimit: 8,
+    emailWindowMs: 10 * 60_000,
+    ipLimit: 50,
+    ipWindowMs: 10 * 60_000,
+  },
+  unknown: {
+    emailLimit: 4,
+    emailWindowMs: 10 * 60_000,
+    ipLimit: 30,
+    ipWindowMs: 10 * 60_000,
+  },
+};
+
+async function logAttempt(
+  event: string,
+  email: string | null,
+  ip: string,
+  metadata: Record<string, unknown> = {},
+) {
   try {
     const service = createServiceRoleClient();
     await service.from("audit_log").insert({
       actor_email: email,
       event,
-      metadata: {},
+      metadata,
       ip,
     });
   } catch {
     // Auditing must never break the login flow.
   }
+}
+
+async function getLoginAccountKind(email: string): Promise<LoginAccountKind> {
+  try {
+    const service = createServiceRoleClient();
+    const [{ data: admin }, { data: client }] = await Promise.all([
+      service.from("admins").select("id").eq("email", email).maybeSingle<{ id: string }>(),
+      service.from("clients").select("id").eq("email", email).maybeSingle<{ id: string }>(),
+    ]);
+
+    if (admin) return "admin";
+    if (client) return "client";
+  } catch {
+    // If service-role lookup is unavailable, keep the login flow generic.
+  }
+
+  return "unknown";
 }
 
 function toOrigin(value: string | null) {
@@ -112,24 +160,32 @@ export async function requestMagicLink(
     };
   }
 
-  const { email, turnstileToken } = parsed.data;
+  const email = parsed.data.email.toLowerCase();
+  const { turnstileToken } = parsed.data;
+  const accountKind = await getLoginAccountKind(email);
+  const limits = LOGIN_RATE_LIMITS[accountKind];
 
   const [ipLimit, emailLimit] = await Promise.all([
-    checkRateLimit(`login:ip:${ip}`, 20, 10 * 60_000),
-    checkRateLimit(`login:email:${email}`, 5, 10 * 60_000),
+    checkRateLimit(`login:${accountKind}:ip:${ip}`, limits.ipLimit, limits.ipWindowMs),
+    checkRateLimit(`login:${accountKind}:email:${email}`, limits.emailLimit, limits.emailWindowMs),
   ]);
 
   if (!ipLimit.ok || !emailLimit.ok) {
-    await logAttempt("login_rate_limited", email, ip);
+    await logAttempt("login_rate_limited", email, ip, {
+      account_kind: accountKind,
+      ip_remaining: ipLimit.remaining,
+      email_remaining: emailLimit.remaining,
+      retry_after_ms: Math.max(ipLimit.retryAfterMs, emailLimit.retryAfterMs),
+    });
     return {
       ok: false,
-      message: "Demasiados intentos. Espera unos minutos antes de volver a intentar.",
+      message: "Demasiados intentos. Espera 1 minuto antes de volver a intentar.",
     };
   }
 
   const isHuman = await verifyTurnstile(turnstileToken, ip);
   if (!isHuman) {
-    await logAttempt("login_turnstile_failed", email, ip);
+    await logAttempt("login_turnstile_failed", email, ip, { account_kind: accountKind });
     return {
       ok: false,
       message: "No pudimos verificar que eres humano. Intenta de nuevo.",
@@ -146,7 +202,10 @@ export async function requestMagicLink(
     },
   });
 
-  await logAttempt(error ? "login_send_failed" : "login_link_sent", email, ip);
+  await logAttempt(error ? "login_send_failed" : "login_link_sent", email, ip, {
+    account_kind: accountKind,
+    error: error?.message ?? null,
+  });
 
   return genericSuccess;
 }

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/admin";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 
 export interface ActionState {
@@ -20,6 +21,7 @@ const newClientSchema = z.object({
 
 const sendClientAccessSchema = z.object({
   clientId: z.string().uuid("Cliente inválido."),
+  mode: z.enum(["email", "manual"]).default("email"),
 });
 
 function toOrigin(value: string | null) {
@@ -135,10 +137,11 @@ export async function sendClientAccessLink(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const parsed = sendClientAccessSchema.safeParse({
     clientId: formData.get("clientId"),
+    mode: formData.get("mode") || "email",
   });
 
   if (!parsed.success) {
@@ -156,6 +159,56 @@ export async function sendClientAccessLink(
     return { ok: false, message: "No encontramos ese cliente." };
   }
 
+  const [adminLimit, clientLimit] = await Promise.all([
+    checkRateLimit(`admin-access-link:admin:${admin.id}`, 30, 10 * 60_000),
+    checkRateLimit(`admin-access-link:client:${client.id}`, 10, 10 * 60_000),
+  ]);
+
+  if (!adminLimit.ok || !clientLimit.ok) {
+    await service.from("audit_log").insert({
+      actor_email: admin.email,
+      event: "admin_access_link_rate_limited",
+      metadata: {
+        client_id: client.id,
+        client_email: client.email,
+        admin_remaining: adminLimit.remaining,
+        client_remaining: clientLimit.remaining,
+      },
+    });
+
+    return {
+      ok: false,
+      message: "Demasiados intentos. Espera 1 minuto y vuelve a intentar.",
+    };
+  }
+
+  if (parsed.data.mode === "manual") {
+    const manual = await generateManualAccessLink(service, client.email);
+
+    await service.from("audit_log").insert({
+      actor_email: admin.email,
+      event: manual.link ? "admin_manual_access_link_generated" : "admin_manual_access_link_failed",
+      metadata: {
+        client_id: client.id,
+        client_email: client.email,
+        manual_error: manual.error?.message ?? null,
+      },
+    });
+
+    if (!manual.link) {
+      return {
+        ok: false,
+        message: "No se pudo generar el enlace manual. Revisa la service role key de Supabase.",
+      };
+    }
+
+    return {
+      ok: true,
+      message: "Enlace manual generado. Copialo y envialo directo al cliente.",
+      accessLink: manual.link,
+    };
+  }
+
   const { error } = await service.auth.signInWithOtp({
     email: client.email,
     options: {
@@ -165,7 +218,7 @@ export async function sendClientAccessLink(
   });
 
   await service.from("audit_log").insert({
-    actor_email: null,
+    actor_email: admin.email,
     event: error ? "admin_access_link_failed" : "admin_access_link_sent",
     metadata: { client_id: client.id, client_email: client.email, error: error?.message ?? null },
   });
@@ -174,7 +227,7 @@ export async function sendClientAccessLink(
     const manual = await generateManualAccessLink(service, client.email);
 
     await service.from("audit_log").insert({
-      actor_email: null,
+      actor_email: admin.email,
       event: manual.link ? "admin_manual_access_link_generated" : "admin_manual_access_link_failed",
       metadata: {
         client_id: client.id,

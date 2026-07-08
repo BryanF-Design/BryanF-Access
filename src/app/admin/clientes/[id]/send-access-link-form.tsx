@@ -17,14 +17,28 @@ export function SendAccessLinkForm({ clientId }: { clientId: string }) {
   return (
     <form action={formAction} className="grid gap-2">
       <input type="hidden" name="clientId" value={clientId} />
-      <button
-        type="submit"
-        disabled={pending}
-        className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-hairline px-4 py-2 text-sm font-medium text-paper transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        <Mail className="h-4 w-4" aria-hidden="true" />
-        {pending ? "Enviando..." : "Enviar acceso"}
-      </button>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="submit"
+          name="mode"
+          value="email"
+          disabled={pending}
+          className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-hairline px-4 py-2 text-sm font-medium text-paper transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <Mail className="h-4 w-4" aria-hidden="true" />
+          {pending ? "Enviando..." : "Enviar correo"}
+        </button>
+        <button
+          type="submit"
+          name="mode"
+          value="manual"
+          disabled={pending}
+          className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-hairline px-4 py-2 text-sm font-medium text-paper transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <Copy className="h-4 w-4" aria-hidden="true" />
+          Generar enlace
+        </button>
+      </div>
       {state.message && (
         <p
           role={state.ok ? "status" : "alert"}
