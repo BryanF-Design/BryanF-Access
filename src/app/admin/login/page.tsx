@@ -2,14 +2,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { LockKeyhole } from "lucide-react";
+import { TurnstileWidget } from "@/components/turnstile-widget";
 import { loginAdmin, type AdminLoginState } from "./actions";
 
 const initialState: AdminLoginState = { ok: false, message: "" };
 
 export default function AdminLoginPage() {
   const [state, formAction, pending] = useActionState(loginAdmin, initialState);
+  const [token, setToken] = useState("");
 
   return (
     <main className="flex min-h-dvh flex-1 items-center justify-center px-6 py-16">
@@ -52,6 +54,9 @@ export default function AdminLoginPage() {
             <label htmlFor="website">No llenar este campo</label>
             <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" />
           </div>
+
+          <input type="hidden" name="turnstileToken" value={token} />
+          <TurnstileWidget onToken={setToken} />
 
           <button
             type="submit"

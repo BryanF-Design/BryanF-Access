@@ -11,6 +11,29 @@ Portal privado para BryanF Design. La app final vive aqui y combina la marca/tut
 5. Configura el redirect de Auth a `http://localhost:3000/auth/callback` y al dominio final en produccion.
 6. En produccion, configura Turnstile y Upstash Redis.
 
+## Supabase Auth Email Template
+
+For server-side auth, use the token hash flow in the Magic Link template:
+
+```html
+<h2>Entrar a BryanF Access</h2>
+<p>Usa este enlace para entrar:</p>
+<p>
+  <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=magiclink">
+    Entrar al portal
+  </a>
+</p>
+```
+
+Set `Site URL` to `https://access.bryanfdesign.com.mx` and allow these redirect URLs:
+
+```txt
+https://access.bryanfdesign.com.mx/auth/callback
+https://access.bryanfdesign.com.mx/auth/confirm
+http://localhost:3001/auth/callback
+http://localhost:3001/auth/confirm
+```
+
 ## Modelo De Acceso
 
 - No hay registro abierto.

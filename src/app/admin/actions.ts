@@ -48,6 +48,14 @@ function getAuthCallbackUrl() {
   return `${origin}/auth/callback`;
 }
 
+function getAuthConfirmUrl(tokenHash: string, type = "magiclink") {
+  const callback = new URL(getAuthCallbackUrl());
+  callback.pathname = "/auth/confirm";
+  callback.searchParams.set("token_hash", tokenHash);
+  callback.searchParams.set("type", type);
+  return callback.toString();
+}
+
 function humanizeAuthEmailError(message: string) {
   const lower = message.toLowerCase();
 
@@ -73,7 +81,9 @@ async function generateManualAccessLink(service: ReturnType<typeof createService
 
   return {
     error,
-    link: data?.properties?.action_link ?? null,
+    link: data?.properties?.hashed_token
+      ? getAuthConfirmUrl(data.properties.hashed_token, data.properties.verification_type ?? "magiclink")
+      : null,
   };
 }
 

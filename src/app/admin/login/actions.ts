@@ -3,6 +3,7 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { verifyTurnstile } from "@/lib/turnstile";
 import {
   ADMIN_SESSION_COOKIE,
   ADMIN_SESSION_MAX_AGE,
@@ -35,6 +36,7 @@ export async function loginAdmin(_prev: AdminLoginState, formData: FormData): Pr
   const headerList = await headers();
   const ip = headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const password = String(formData.get("password") ?? "");
+  const turnstileToken = String(formData.get("turnstileToken") ?? "");
   const website = String(formData.get("website") ?? "");
 
   if (website) {
@@ -55,6 +57,14 @@ export async function loginAdmin(_prev: AdminLoginState, formData: FormData): Pr
   if (!process.env.ADMIN_ACCESS_PASSWORD) {
     await auditAdminLogin("admin_login_missing_password", ip);
     return { ok: false, message: "Falta ADMIN_ACCESS_PASSWORD en Vercel." };
+  }
+
+  if (process.env.TURNSTILE_SECRET_KEY) {
+    const isHuman = await verifyTurnstile(turnstileToken, ip);
+    if (!isHuman) {
+      await auditAdminLogin("admin_login_turnstile_failed", ip);
+      return { ok: false, message: "No pudimos verificar Cloudflare Turnstile." };
+    }
   }
 
   if (!isAdminPasswordValid(password)) {
