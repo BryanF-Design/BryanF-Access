@@ -40,7 +40,7 @@ export function Ledger({
   const isSettled = remaining <= 0 && totalPrice > 0;
 
   return (
-    <div className="relative overflow-hidden rounded-card border border-hairline bg-paper text-ink shadow-[0_20px_60px_-30px_rgba(179,227,49,0.35)]">
+    <div className="relative overflow-hidden rounded-card border border-hairline bg-paper text-ink shadow-glow">
       <div className="torn-edge h-3 bg-ink" />
 
       <div className="px-6 pb-6 pt-5 sm:px-8 sm:pb-8">

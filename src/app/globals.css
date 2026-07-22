@@ -5,12 +5,20 @@
   --lime: #b3e331;
   --lime-deep: #7fa61f;
   --lime-dim: #2c3a17;
+  --lime-soft: #d6f27a;
 
   /* Base surfaces — near-black with a green undertone, not pure black */
   --ink: #0e1310;
   --ink-raised: #161d18;
+  --ink-elevated: #1d2620;
   --graphite: #1b241d;
   --hairline: #2a342c;
+  --hairline-soft: #212b23;
+
+  /* Glass — translucent surfaces for popovers, hero panels, floating cards */
+  --surface-glass: rgba(22, 29, 24, 0.72);
+  --border-glass: rgba(246, 247, 241, 0.08);
+  --border-glass-strong: rgba(246, 247, 241, 0.14);
 
   /* Paper — warm off-white, evokes the printed receipt */
   --paper: #f6f7f1;
@@ -19,28 +27,48 @@
   /* Status accents */
   --amber: #f2a93c;
   --rose: #e8604a;
+  --sky: #5fb8e0;
 
   --radius-card: 1.25rem;
+  --radius-sm: 0.625rem;
+  --radius-pill: 999px;
+
+  /* Elevation */
+  --shadow-soft: 0 1px 1px rgba(0, 0, 0, 0.2), 0 12px 28px -14px rgba(0, 0, 0, 0.65);
+  --shadow-lift: 0 4px 8px rgba(0, 0, 0, 0.25), 0 24px 48px -18px rgba(0, 0, 0, 0.75);
+  --shadow-glow: 0 0 0 1px rgba(179, 227, 49, 0.16), 0 16px 40px -12px rgba(179, 227, 49, 0.35);
 }
 
 @theme inline {
   --color-ink: var(--ink);
   --color-ink-raised: var(--ink-raised);
+  --color-ink-elevated: var(--ink-elevated);
   --color-graphite: var(--graphite);
   --color-hairline: var(--hairline);
+  --color-hairline-soft: var(--hairline-soft);
+  --color-surface-glass: var(--surface-glass);
+  --color-border-glass: var(--border-glass);
   --color-paper: var(--paper);
   --color-paper-dim: var(--paper-dim);
   --color-lime: var(--lime);
   --color-lime-deep: var(--lime-deep);
   --color-lime-dim: var(--lime-dim);
+  --color-lime-soft: var(--lime-soft);
   --color-amber: var(--amber);
   --color-rose: var(--rose);
+  --color-sky: var(--sky);
 
   --font-display: var(--font-display);
   --font-body: var(--font-body);
   --font-ledger: var(--font-ledger);
 
   --radius-card: var(--radius-card);
+  --radius-sm: var(--radius-sm);
+  --radius-pill: var(--radius-pill);
+
+  --shadow-soft: var(--shadow-soft);
+  --shadow-lift: var(--shadow-lift);
+  --shadow-glow: var(--shadow-glow);
 }
 
 * {
@@ -95,4 +123,34 @@ body {
   background-size: 6px 2px;
   background-repeat: repeat-x;
   background-position: bottom left;
+}
+
+/* Ambient lime mesh — used behind login panels and dashboard heroes */
+.mesh-glow {
+  background:
+    radial-gradient(circle at 12% 15%, rgba(179, 227, 49, 0.18), transparent 42%),
+    radial-gradient(circle at 88% -5%, rgba(179, 227, 49, 0.1), transparent 40%),
+    radial-gradient(circle at 50% 105%, rgba(127, 166, 31, 0.14), transparent 55%);
+}
+
+/* Fine dot-grid texture, evokes graph/ledger paper at very low contrast */
+.grid-texture {
+  background-image: radial-gradient(circle, var(--hairline-soft) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2.6s ease-in-out infinite;
 }

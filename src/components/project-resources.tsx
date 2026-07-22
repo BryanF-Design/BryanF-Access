@@ -1,4 +1,5 @@
 import { ExternalLink, FolderKanban, KeyRound, Link2, PlaySquare } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import type { ProjectResource } from "@/types/database";
 
 const LABELS: Record<ProjectResource["resource_type"], string> = {
@@ -19,11 +20,7 @@ const ICONS = {
 
 export function ProjectResources({ resources }: { resources: ProjectResource[] }) {
   if (resources.length === 0) {
-    return (
-      <div className="rounded-card border border-dashed border-hairline p-8 text-center">
-        <p className="text-sm text-paper-dim">Todavia no hay recursos vinculados a este proyecto.</p>
-      </div>
-    );
+    return <EmptyState title="Todavia no hay recursos vinculados a este proyecto." />;
   }
 
   const sorted = [...resources].sort((a, b) => a.position - b.position || a.title.localeCompare(b.title));
@@ -39,7 +36,7 @@ export function ProjectResources({ resources }: { resources: ProjectResource[] }
             href={resource.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex min-h-16 items-start justify-between gap-4 rounded-card border border-hairline bg-ink-raised p-4 transition hover:border-lime"
+            className="group flex min-h-16 items-start justify-between gap-4 rounded-card border border-hairline bg-ink-raised p-4 transition hover:border-lime hover:shadow-soft"
           >
             <span className="flex min-w-0 gap-3">
               <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-lime-dim text-lime">

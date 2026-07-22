@@ -4,6 +4,9 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { useActionState } from "react";
 import { createClientAccount, type ActionState } from "@/app/admin/actions";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { fieldStyles, labelStyles } from "@/components/ui/field";
 
 const initialState: ActionState = { ok: true, message: "" };
 
@@ -26,111 +29,99 @@ export function NewClientForm() {
         <span className="font-ledger">/login</span> usando este correo.
       </p>
 
-      <form action={formAction} className="mt-6 space-y-5 rounded-card border border-hairline bg-ink-raised p-6">
-        <div>
-          <label htmlFor="fullName" className="mb-2 block text-sm font-medium text-paper">
-            Nombre del contacto
-          </label>
-          <input
-            id="fullName"
-            name="fullName"
-            required
-            placeholder="Ana Torres"
-            className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 text-paper outline-none focus:border-lime"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="company" className="mb-2 block text-sm font-medium text-paper">
-            Empresa <span className="text-paper-dim">(opcional)</span>
-          </label>
-          <input
-            id="company"
-            name="company"
-            placeholder="Cafe Alameda"
-            className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 text-paper outline-none focus:border-lime"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="email" className="mb-2 block text-sm font-medium text-paper">
-            Correo electronico
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            required
-            placeholder="ana@cafealameda.com"
-            className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 text-paper outline-none focus:border-lime"
-          />
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
+      <Card variant="surface" padding="lg" className="mt-6">
+        <form action={formAction} className="space-y-5">
           <div>
-            <label htmlFor="phone" className="mb-2 block text-sm font-medium text-paper">
-              Telefono <span className="text-paper-dim">(opcional)</span>
+            <label htmlFor="fullName" className={labelStyles}>
+              Nombre del contacto
             </label>
             <input
-              id="phone"
-              name="phone"
-              type="tel"
-              placeholder="+52 55 0000 0000"
-              className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 text-paper outline-none focus:border-lime"
+              id="fullName"
+              name="fullName"
+              required
+              placeholder="Ana Torres"
+              className={fieldStyles}
             />
           </div>
+
           <div>
-            <label htmlFor="country" className="mb-2 block text-sm font-medium text-paper">
-              Pais <span className="text-paper-dim">(opcional)</span>
+            <label htmlFor="company" className={labelStyles}>
+              Empresa <span className="text-paper-dim">(opcional)</span>
+            </label>
+            <input id="company" name="company" placeholder="Cafe Alameda" className={fieldStyles} />
+          </div>
+
+          <div>
+            <label htmlFor="email" className={labelStyles}>
+              Correo electronico
             </label>
             <input
-              id="country"
-              name="country"
-              placeholder="Mexico"
-              className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 text-paper outline-none focus:border-lime"
+              id="email"
+              name="email"
+              type="email"
+              required
+              placeholder="ana@cafealameda.com"
+              className={fieldStyles}
             />
           </div>
-        </div>
 
-        <div>
-          <label htmlFor="industry" className="mb-2 block text-sm font-medium text-paper">
-            Rubro o rama <span className="text-paper-dim">(opcional)</span>
-          </label>
-          <input
-            id="industry"
-            name="industry"
-            placeholder="Arquitectura, ecommerce, salud, restaurante..."
-            className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 text-paper outline-none focus:border-lime"
-          />
-        </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="phone" className={labelStyles}>
+                Telefono <span className="text-paper-dim">(opcional)</span>
+              </label>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                placeholder="+52 55 0000 0000"
+                className={fieldStyles}
+              />
+            </div>
+            <div>
+              <label htmlFor="country" className={labelStyles}>
+                Pais <span className="text-paper-dim">(opcional)</span>
+              </label>
+              <input id="country" name="country" placeholder="Mexico" className={fieldStyles} />
+            </div>
+          </div>
 
-        <div>
-          <label htmlFor="driveUrl" className="mb-2 block text-sm font-medium text-paper">
-            Link de Drive <span className="text-paper-dim">(opcional)</span>
-          </label>
-          <input
-            id="driveUrl"
-            name="driveUrl"
-            type="url"
-            placeholder="https://drive.google.com/..."
-            className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 text-paper outline-none focus:border-lime"
-          />
-        </div>
+          <div>
+            <label htmlFor="industry" className={labelStyles}>
+              Rubro o rama <span className="text-paper-dim">(opcional)</span>
+            </label>
+            <input
+              id="industry"
+              name="industry"
+              placeholder="Arquitectura, ecommerce, salud, restaurante..."
+              className={fieldStyles}
+            />
+          </div>
 
-        <button
-          type="submit"
-          disabled={pending}
-          className="w-full rounded-lg bg-lime px-4 py-2.5 font-medium text-ink transition hover:bg-lime-deep disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {pending ? "Creando..." : "Crear cliente"}
-        </button>
+          <div>
+            <label htmlFor="driveUrl" className={labelStyles}>
+              Link de Drive <span className="text-paper-dim">(opcional)</span>
+            </label>
+            <input
+              id="driveUrl"
+              name="driveUrl"
+              type="url"
+              placeholder="https://drive.google.com/..."
+              className={fieldStyles}
+            />
+          </div>
 
-        {!state.ok && state.message && (
-          <p role="alert" className="text-center text-sm text-rose">
-            {state.message}
-          </p>
-        )}
-      </form>
+          <Button type="submit" variant="primary" size="lg" disabled={pending} className="w-full">
+            {pending ? "Creando..." : "Crear cliente"}
+          </Button>
+
+          {!state.ok && state.message && (
+            <p role="alert" className="text-center text-sm text-rose">
+              {state.message}
+            </p>
+          )}
+        </form>
+      </Card>
     </div>
   );
 }

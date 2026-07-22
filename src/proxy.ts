@@ -48,6 +48,6 @@ export const config = {
      * so every page navigation and route handler gets the security headers
      * and session refresh above.
      */
-    "/((?!_next/static|_next/image|favicon.ico|logo.png).*)",
+    "/((?!_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|logo.png|icon-mark.png|icon-favicon.png).*)",
   ],
 };

@@ -7,7 +7,7 @@ export function Tutorials() {
       {tutorialSteps.map((step) => (
         <details
           key={step.slug}
-          className="group rounded-card border border-hairline bg-ink-raised p-4 open:border-lime/60"
+          className="group rounded-card border border-hairline bg-ink-raised p-4 transition open:border-lime/60 open:shadow-soft"
         >
           <summary className="flex cursor-pointer list-none items-start gap-3">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-lime-dim text-lime">

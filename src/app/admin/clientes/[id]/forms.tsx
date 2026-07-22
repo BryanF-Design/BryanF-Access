@@ -9,6 +9,10 @@ import {
   updateClientProfile,
   type ActionState,
 } from "@/app/admin/actions";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { fieldStyles, fieldStylesSm, labelStyles } from "@/components/ui/field";
 import type { Client, ClientCredential } from "@/types/database";
 
 const initialState: ActionState = { ok: true, message: "" };
@@ -48,131 +52,113 @@ export function EditClientForm({ client }: { client: Client }) {
   const [state, formAction, pending] = useActionState(updateClientProfile, initialState);
 
   return (
-    <form action={formAction} className="grid gap-4 rounded-card border border-hairline bg-ink-raised p-5">
-      <input type="hidden" name="clientId" value={client.id} />
+    <Card variant="surface" padding="lg" className="grid gap-4">
+      <form action={formAction} className="grid gap-4">
+        <input type="hidden" name="clientId" value={client.id} />
 
-      <div>
-        <p className="font-display text-lg font-semibold text-paper">Expediente del cliente</p>
-        <p className="mt-1 text-sm text-paper-dim">Datos base para proyectos, contacto y entregas.</p>
-      </div>
-
-      <div>
-        <label htmlFor="fullName" className="mb-2 block text-sm font-medium text-paper">
-          Nombre del contacto
-        </label>
-        <input
-          id="fullName"
-          name="fullName"
-          required
-          defaultValue={client.full_name}
-          className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 text-paper outline-none focus:border-lime"
-        />
-      </div>
-
-      <div>
-        <label htmlFor="company" className="mb-2 block text-sm font-medium text-paper">
-          Empresa
-        </label>
-        <input
-          id="company"
-          name="company"
-          defaultValue={client.company ?? ""}
-          className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 text-paper outline-none focus:border-lime"
-        />
-      </div>
-
-      <div>
-        <label htmlFor="email" className="mb-2 block text-sm font-medium text-paper">
-          Correo de acceso
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          required
-          defaultValue={client.email}
-          className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 text-paper outline-none focus:border-lime"
-        />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="phone" className="mb-2 block text-sm font-medium text-paper">
-            Telefono
+          <p className="font-display text-lg font-semibold text-paper">Expediente del cliente</p>
+          <p className="mt-1 text-sm text-paper-dim">Datos base para proyectos, contacto y entregas.</p>
+        </div>
+
+        <div>
+          <label htmlFor="fullName" className={labelStyles}>
+            Nombre del contacto
           </label>
           <input
-            id="phone"
-            name="phone"
-            type="tel"
-            defaultValue={client.phone ?? ""}
-            className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 text-paper outline-none focus:border-lime"
+            id="fullName"
+            name="fullName"
+            required
+            defaultValue={client.full_name}
+            className={fieldStyles}
           />
         </div>
+
         <div>
-          <label htmlFor="country" className="mb-2 block text-sm font-medium text-paper">
-            Pais
+          <label htmlFor="company" className={labelStyles}>
+            Empresa
+          </label>
+          <input id="company" name="company" defaultValue={client.company ?? ""} className={fieldStyles} />
+        </div>
+
+        <div>
+          <label htmlFor="email" className={labelStyles}>
+            Correo de acceso
           </label>
           <input
-            id="country"
-            name="country"
-            defaultValue={client.country ?? ""}
-            className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 text-paper outline-none focus:border-lime"
+            id="email"
+            name="email"
+            type="email"
+            required
+            defaultValue={client.email}
+            className={fieldStyles}
           />
         </div>
-      </div>
 
-      <div>
-        <label htmlFor="industry" className="mb-2 block text-sm font-medium text-paper">
-          Rubro o rama
-        </label>
-        <input
-          id="industry"
-          name="industry"
-          defaultValue={client.industry ?? ""}
-          placeholder="Arquitectura, salud, ecommerce..."
-          className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 text-paper outline-none focus:border-lime"
-        />
-      </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="phone" className={labelStyles}>
+              Telefono
+            </label>
+            <input id="phone" name="phone" type="tel" defaultValue={client.phone ?? ""} className={fieldStyles} />
+          </div>
+          <div>
+            <label htmlFor="country" className={labelStyles}>
+              Pais
+            </label>
+            <input id="country" name="country" defaultValue={client.country ?? ""} className={fieldStyles} />
+          </div>
+        </div>
 
-      <div>
-        <label htmlFor="driveUrl" className="mb-2 block text-sm font-medium text-paper">
-          Drive principal
-        </label>
-        <input
-          id="driveUrl"
-          name="driveUrl"
-          type="url"
-          defaultValue={client.drive_url ?? ""}
-          placeholder="https://drive.google.com/..."
-          className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 text-paper outline-none focus:border-lime"
-        />
-      </div>
+        <div>
+          <label htmlFor="industry" className={labelStyles}>
+            Rubro o rama
+          </label>
+          <input
+            id="industry"
+            name="industry"
+            defaultValue={client.industry ?? ""}
+            placeholder="Arquitectura, salud, ecommerce..."
+            className={fieldStyles}
+          />
+        </div>
 
-      <div>
-        <label htmlFor="notes" className="mb-2 block text-sm font-medium text-paper">
-          Notas internas
-        </label>
-        <textarea
-          id="notes"
-          name="notes"
-          rows={3}
-          defaultValue={client.notes ?? ""}
-          className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 text-paper outline-none focus:border-lime"
-        />
-      </div>
+        <div>
+          <label htmlFor="driveUrl" className={labelStyles}>
+            Drive principal
+          </label>
+          <input
+            id="driveUrl"
+            name="driveUrl"
+            type="url"
+            defaultValue={client.drive_url ?? ""}
+            placeholder="https://drive.google.com/..."
+            className={fieldStyles}
+          />
+        </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-lg bg-lime px-4 py-2 text-sm font-medium text-ink transition hover:bg-lime-deep disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {pending ? "Guardando..." : "Guardar cliente"}
-        </button>
-        <SuccessMessage state={state} />
-        <FieldError state={state} />
-      </div>
-    </form>
+        <div>
+          <label htmlFor="notes" className={labelStyles}>
+            Notas internas
+          </label>
+          <textarea
+            id="notes"
+            name="notes"
+            rows={3}
+            defaultValue={client.notes ?? ""}
+            className={fieldStyles}
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <Button type="submit" variant="primary" size="md" disabled={pending}>
+            {pending ? "Guardando..." : "Guardar cliente"}
+          </Button>
+          <SuccessMessage state={state} />
+          <FieldError state={state} />
+        </div>
+      </form>
+    </Card>
   );
 }
 
@@ -182,59 +168,34 @@ export function NewClientCredentialForm({ clientId }: { clientId: string }) {
   useResetOnSuccess(state, formRef);
 
   return (
-    <form ref={formRef} action={formAction} className="grid gap-3 rounded-card border border-dashed border-hairline p-4">
-      <input type="hidden" name="clientId" value={clientId} />
-      <div className="grid gap-3 sm:grid-cols-2">
-        <input
-          name="label"
-          required
-          placeholder="Host, dominio, cPanel..."
-          className="rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-        />
-        <input
-          name="provider"
-          placeholder="Proveedor"
-          className="rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-        />
-      </div>
-      <input
-        name="loginUrl"
-        type="url"
-        placeholder="https://panel.host.com"
-        className="rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-      />
-      <div className="grid gap-3 sm:grid-cols-2">
-        <input
-          name="username"
-          placeholder="Usuario"
-          autoComplete="off"
-          className="rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-        />
-        <input
-          name="secret"
-          type="password"
-          placeholder="Password o secreto"
-          autoComplete="new-password"
-          className="rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-        />
-      </div>
-      <input
-        name="notes"
-        placeholder="Notas privadas"
-        className="rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-      />
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-lg border border-hairline px-4 py-2 text-sm text-paper transition hover:border-lime hover:text-lime disabled:opacity-60"
-        >
-          {pending ? "Guardando..." : "Agregar acceso"}
-        </button>
-        <SuccessMessage state={state} />
-        <FieldError state={state} />
-      </div>
-    </form>
+    <Card variant="dashed" padding="sm">
+      <form ref={formRef} action={formAction} className="grid gap-3">
+        <input type="hidden" name="clientId" value={clientId} />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <input name="label" required placeholder="Host, dominio, cPanel..." className={fieldStylesSm} />
+          <input name="provider" placeholder="Proveedor" className={fieldStylesSm} />
+        </div>
+        <input name="loginUrl" type="url" placeholder="https://panel.host.com" className={fieldStylesSm} />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <input name="username" placeholder="Usuario" autoComplete="off" className={fieldStylesSm} />
+          <input
+            name="secret"
+            type="password"
+            placeholder="Password o secreto"
+            autoComplete="new-password"
+            className={fieldStylesSm}
+          />
+        </div>
+        <input name="notes" placeholder="Notas privadas" className={fieldStylesSm} />
+        <div className="flex flex-wrap items-center gap-3">
+          <Button type="submit" variant="secondary" size="sm" disabled={pending}>
+            {pending ? "Guardando..." : "Agregar acceso"}
+          </Button>
+          <SuccessMessage state={state} />
+          <FieldError state={state} />
+        </div>
+      </form>
+    </Card>
   );
 }
 
@@ -258,18 +219,14 @@ function RevealSecretForm({ credential }: { credential: CredentialSummary }) {
       <form action={formAction} className="flex flex-wrap items-center gap-2">
         <input type="hidden" name="credentialId" value={credential.id} />
         <input type="hidden" name="clientId" value={credential.client_id} />
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-hairline px-3 py-2 text-xs text-paper transition hover:border-lime hover:text-lime disabled:opacity-60"
-        >
+        <Button type="submit" variant="secondary" size="sm" disabled={pending}>
           {state.secret ? (
             <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />
           ) : (
             <Eye className="h-3.5 w-3.5" aria-hidden="true" />
           )}
           {pending ? "Revisando..." : state.secret ? "Revelado" : "Revelar"}
-        </button>
+        </Button>
       </form>
       {state.secret && (
         <div className="flex min-w-0 items-center gap-2 rounded-lg border border-hairline bg-ink px-2 py-2">
@@ -301,17 +258,13 @@ export function ClientCredentialList({
   credentials: CredentialSummary[];
 }) {
   if (credentials.length === 0) {
-    return (
-      <div className="rounded-card border border-dashed border-hairline p-6 text-center">
-        <p className="text-sm text-paper-dim">Todavia no hay accesos privados guardados.</p>
-      </div>
-    );
+    return <EmptyState title="Todavia no hay accesos privados guardados." className="px-6 py-8" />;
   }
 
   return (
     <div className="grid gap-3">
       {credentials.map((credential) => (
-        <article key={credential.id} className="rounded-card border border-hairline bg-ink-raised p-4">
+        <Card key={credential.id} variant="surface" padding="sm">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="font-medium text-paper">{credential.label}</p>
@@ -346,7 +299,7 @@ export function ClientCredentialList({
           <div className="mt-4">
             <RevealSecretForm credential={credential} />
           </div>
-        </article>
+        </Card>
       ))}
     </div>
   );

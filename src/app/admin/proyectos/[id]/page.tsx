@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Download, ExternalLink, Link2, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, Download, ExternalLink, Link2, Trash2 } from "lucide-react";
 import { requireAdmin } from "@/lib/admin";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { Ledger } from "@/components/ledger";
 import { AutoSubmitSelect } from "@/components/auto-submit-select";
 import { ProjectChangeCalendar } from "@/components/project-change-calendar";
 import { formatShortDate } from "@/lib/format";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   deleteDeliverable,
   deleteMilestone,
@@ -55,6 +57,9 @@ const DELIVERABLE_STATUS_OPTIONS = [
   { value: "aprobado", label: "Aprobado" },
   { value: "entregado", label: "Entregado" },
 ];
+
+const selectStyles =
+  "rounded-lg border border-hairline bg-ink-elevated px-2.5 py-1.5 font-ledger text-xs text-paper outline-none transition focus:border-lime focus:ring-2 focus:ring-lime/30";
 
 export default async function AdminProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -110,11 +115,16 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
         <h1 className="font-display text-3xl font-semibold text-paper">{project.name}</h1>
         <form action={updateProjectStatus}>
           <input type="hidden" name="projectId" value={project.id} />
-          <AutoSubmitSelect name="status" defaultValue={project.status} options={PROJECT_STATUS_OPTIONS} />
+          <AutoSubmitSelect
+            name="status"
+            defaultValue={project.status}
+            options={PROJECT_STATUS_OPTIONS}
+            className={selectStyles}
+          />
         </form>
       </div>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <Ledger
           projectName={project.name}
           totalPrice={Number(project.total_price)}
@@ -147,9 +157,11 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
             <p className="text-sm text-paper-dim">Todavía no hay pagos registrados.</p>
           ) : (
             payments.map((payment) => (
-              <div
+              <Card
                 key={payment.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-hairline bg-ink-raised px-4 py-3"
+                variant="surface"
+                padding="none"
+                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
               >
                 <div className="flex flex-wrap items-baseline gap-3">
                   <span className="font-ledger text-sm text-lime">
@@ -167,15 +179,11 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
                 <form action={deletePayment}>
                   <input type="hidden" name="paymentId" value={payment.id} />
                   <input type="hidden" name="projectId" value={project.id} />
-                  <button
-                    type="submit"
-                    aria-label="Eliminar pago"
-                    className="text-paper-dim transition hover:text-rose"
-                  >
+                  <Button type="submit" variant="danger" size="icon-sm" aria-label="Eliminar pago">
                     <Trash2 className="h-4 w-4" aria-hidden="true" />
-                  </button>
+                  </Button>
                 </form>
-              </div>
+              </Card>
             ))
           )}
         </div>
@@ -190,9 +198,11 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
             <p className="text-sm text-paper-dim">Todavía no hay etapas.</p>
           ) : (
             milestones.map((milestone, index) => (
-              <div
+              <Card
                 key={milestone.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-hairline bg-ink-raised px-4 py-3"
+                variant="surface"
+                padding="none"
+                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
               >
                 <div className="min-w-0">
                   <p className="font-medium text-paper">{milestone.title}</p>
@@ -212,9 +222,9 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
                       type="submit"
                       disabled={index === 0}
                       aria-label="Mover arriba"
-                      className="rounded border border-hairline px-2 py-1 text-paper-dim transition hover:border-lime hover:text-lime disabled:opacity-30"
+                      className="rounded-lg border border-hairline p-1.5 text-paper-dim transition hover:border-lime hover:text-lime disabled:opacity-30"
                     >
-                      ↑
+                      <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
                     </button>
                   </form>
                   <form action={moveMilestone}>
@@ -225,9 +235,9 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
                       type="submit"
                       disabled={index === milestones.length - 1}
                       aria-label="Mover abajo"
-                      className="rounded border border-hairline px-2 py-1 text-paper-dim transition hover:border-lime hover:text-lime disabled:opacity-30"
+                      className="rounded-lg border border-hairline p-1.5 text-paper-dim transition hover:border-lime hover:text-lime disabled:opacity-30"
                     >
-                      ↓
+                      <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />
                     </button>
                   </form>
                   <form action={updateMilestoneStatus}>
@@ -237,21 +247,18 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
                       name="status"
                       defaultValue={milestone.status}
                       options={MILESTONE_STATUS_OPTIONS}
+                      className={selectStyles}
                     />
                   </form>
                   <form action={deleteMilestone}>
                     <input type="hidden" name="milestoneId" value={milestone.id} />
                     <input type="hidden" name="projectId" value={project.id} />
-                    <button
-                      type="submit"
-                      aria-label="Eliminar etapa"
-                      className="text-paper-dim transition hover:text-rose"
-                    >
+                    <Button type="submit" variant="danger" size="icon-sm" aria-label="Eliminar etapa">
                       <Trash2 className="h-4 w-4" aria-hidden="true" />
-                    </button>
+                    </Button>
                   </form>
                 </div>
-              </div>
+              </Card>
             ))
           )}
         </div>
@@ -266,9 +273,11 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
             <p className="text-sm text-paper-dim">Todavia no hay recursos del proyecto.</p>
           ) : (
             resources.map((resource) => (
-              <div
+              <Card
                 key={resource.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-hairline bg-ink-raised px-4 py-3"
+                variant="surface"
+                padding="none"
+                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
               >
                 <div className="min-w-0">
                   <p className="flex items-center gap-2 font-medium text-paper">
@@ -280,12 +289,12 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
                     <p className="mt-1 text-sm text-paper-dim">{resource.description}</p>
                   )}
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <a
                     href={resource.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-paper-dim transition hover:text-lime"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-paper-dim transition hover:bg-lime/10 hover:text-lime"
                     aria-label="Abrir recurso"
                   >
                     <ExternalLink className="h-4 w-4" aria-hidden="true" />
@@ -293,16 +302,12 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
                   <form action={deleteProjectResource}>
                     <input type="hidden" name="resourceId" value={resource.id} />
                     <input type="hidden" name="projectId" value={project.id} />
-                    <button
-                      type="submit"
-                      aria-label="Eliminar recurso"
-                      className="text-paper-dim transition hover:text-rose"
-                    >
+                    <Button type="submit" variant="danger" size="icon-sm" aria-label="Eliminar recurso">
                       <Trash2 className="h-4 w-4" aria-hidden="true" />
-                    </button>
+                    </Button>
                   </form>
                 </div>
-              </div>
+              </Card>
             ))
           )}
         </div>
@@ -317,9 +322,11 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
             <p className="text-sm text-paper-dim">Todavía no hay entregables.</p>
           ) : (
             deliverables.map((deliverable) => (
-              <div
+              <Card
                 key={deliverable.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-hairline bg-ink-raised px-4 py-3"
+                variant="surface"
+                padding="none"
+                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
               >
                 <div className="min-w-0">
                   <p className="font-medium text-paper">
@@ -338,7 +345,7 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
                   {deliverable.storage_path && (
                     <a
                       href={`/api/admin/deliverables/${deliverable.id}/download`}
-                      className="text-paper-dim transition hover:text-lime"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-paper-dim transition hover:bg-lime/10 hover:text-lime"
                       aria-label="Descargar"
                     >
                       <Download className="h-4 w-4" aria-hidden="true" />
@@ -351,21 +358,18 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
                       name="status"
                       defaultValue={deliverable.status}
                       options={DELIVERABLE_STATUS_OPTIONS}
+                      className={selectStyles}
                     />
                   </form>
                   <form action={deleteDeliverable}>
                     <input type="hidden" name="deliverableId" value={deliverable.id} />
                     <input type="hidden" name="projectId" value={project.id} />
-                    <button
-                      type="submit"
-                      aria-label="Eliminar entregable"
-                      className="text-paper-dim transition hover:text-rose"
-                    >
+                    <Button type="submit" variant="danger" size="icon-sm" aria-label="Eliminar entregable">
                       <Trash2 className="h-4 w-4" aria-hidden="true" />
-                    </button>
+                    </Button>
                   </form>
                 </div>
-              </div>
+              </Card>
             ))
           )}
         </div>

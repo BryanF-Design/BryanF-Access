@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { Copy, Mail } from "lucide-react";
 import { sendClientAccessLink, type ActionState } from "@/app/admin/actions";
+import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { ok: true, message: "" };
 
@@ -18,26 +19,14 @@ export function SendAccessLinkForm({ clientId }: { clientId: string }) {
     <form action={formAction} className="grid gap-2">
       <input type="hidden" name="clientId" value={clientId} />
       <div className="flex flex-wrap gap-2">
-        <button
-          type="submit"
-          name="mode"
-          value="email"
-          disabled={pending}
-          className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-hairline px-4 py-2 text-sm font-medium text-paper transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
-        >
+        <Button type="submit" name="mode" value="email" variant="secondary" size="md" disabled={pending}>
           <Mail className="h-4 w-4" aria-hidden="true" />
           {pending ? "Enviando..." : "Enviar correo"}
-        </button>
-        <button
-          type="submit"
-          name="mode"
-          value="manual"
-          disabled={pending}
-          className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-hairline px-4 py-2 text-sm font-medium text-paper transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
-        >
+        </Button>
+        <Button type="submit" name="mode" value="manual" variant="secondary" size="md" disabled={pending}>
           <Copy className="h-4 w-4" aria-hidden="true" />
           Generar enlace
-        </button>
+        </Button>
       </div>
       {state.message && (
         <p
@@ -55,14 +44,10 @@ export function SendAccessLinkForm({ clientId }: { clientId: string }) {
             className="w-full rounded-lg border border-hairline bg-ink px-3 py-2 text-xs text-paper outline-none"
             onFocus={(event) => event.currentTarget.select()}
           />
-          <button
-            type="button"
-            onClick={copyAccessLink}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-lime px-3 py-2 text-xs font-medium text-ink transition hover:bg-lime-deep"
-          >
+          <Button type="button" variant="primary" size="sm" onClick={copyAccessLink}>
             <Copy className="h-3.5 w-3.5" aria-hidden="true" />
             Copiar enlace manual
-          </button>
+          </Button>
         </div>
       )}
     </form>

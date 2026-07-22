@@ -18,7 +18,7 @@ export function AutoSubmitSelect({
       onChange={(event) => event.currentTarget.form?.requestSubmit()}
       className={
         className ??
-        "rounded-lg border border-hairline bg-ink px-2.5 py-1.5 font-ledger text-xs text-paper outline-none focus:border-lime"
+        "rounded-lg border border-hairline bg-ink-elevated px-2.5 py-1.5 font-ledger text-xs text-paper outline-none transition focus:border-lime focus:ring-2 focus:ring-lime/30"
       }
     >
       {options.map((option) => (

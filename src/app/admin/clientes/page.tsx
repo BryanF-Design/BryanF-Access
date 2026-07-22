@@ -1,7 +1,10 @@
 import Link from "next/link";
-import { BriefcaseBusiness, Globe2, Phone, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { requireAdmin } from "@/lib/admin";
 import { createServiceRoleClient } from "@/lib/supabase/server";
+import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
+import { ClientsDirectory, type ClientDirectoryEntry } from "./clients-directory";
 import type { Client, Project } from "@/types/database";
 
 export default async function AdminClientsPage() {
@@ -18,64 +21,41 @@ export default async function AdminClientsPage() {
 
   const projectCountByClient = new Map<string, number>();
   for (const project of projects) {
-    projectCountByClient.set(project.client_id, (projectCountByClient.get(project.client_id) ?? 0) + 1);
+    projectCountByClient.set(
+      project.client_id,
+      (projectCountByClient.get(project.client_id) ?? 0) + 1,
+    );
   }
+
+  const directory: ClientDirectoryEntry[] = clients.map((client) => ({
+    id: client.id,
+    name: client.company ?? client.full_name,
+    fullName: client.full_name,
+    email: client.email,
+    industry: client.industry,
+    country: client.country,
+    phone: client.phone,
+    projectCount: projectCountByClient.get(client.id) ?? 0,
+  }));
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="font-display text-3xl font-semibold text-paper">Clientes</h1>
-        <Link
-          href="/admin/clientes/nuevo"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-lime px-4 py-2 text-sm font-medium text-ink transition hover:bg-lime-deep"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          Nuevo cliente
-        </Link>
-      </div>
+      <PageHeader
+        title="Clientes"
+        description="Directorio de clientes y sus proyectos."
+        actions={
+          <Link href="/admin/clientes/nuevo">
+            <Button variant="primary" size="md">
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Nuevo cliente
+            </Button>
+          </Link>
+        }
+      />
 
-      {clients.length === 0 ? (
-        <div className="mt-8 rounded-card border border-dashed border-hairline p-8 text-center">
-          <p className="text-sm text-paper-dim">Todavía no has dado de alta ningún cliente.</p>
-        </div>
-      ) : (
-        <div className="mt-8 grid gap-3 sm:grid-cols-2">
-          {clients.map((client) => (
-            <Link
-              key={client.id}
-              href={`/admin/clientes/${client.id}`}
-              className="rounded-card border border-hairline bg-ink-raised p-5 transition hover:border-lime"
-            >
-              <p className="font-medium text-paper">{client.company ?? client.full_name}</p>
-              {client.company && <p className="text-sm text-paper-dim">{client.full_name}</p>}
-              <p className="mt-1 font-ledger text-xs text-paper-dim">{client.email}</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {client.industry && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-hairline px-2 py-1 text-[11px] text-paper-dim">
-                    <BriefcaseBusiness className="h-3 w-3 text-lime" aria-hidden="true" />
-                    {client.industry}
-                  </span>
-                )}
-                {client.country && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-hairline px-2 py-1 text-[11px] text-paper-dim">
-                    <Globe2 className="h-3 w-3 text-lime" aria-hidden="true" />
-                    {client.country}
-                  </span>
-                )}
-                {client.phone && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-hairline px-2 py-1 text-[11px] text-paper-dim">
-                    <Phone className="h-3 w-3 text-lime" aria-hidden="true" />
-                    {client.phone}
-                  </span>
-                )}
-              </div>
-              <p className="mt-3 font-ledger text-xs text-lime">
-                {projectCountByClient.get(client.id) ?? 0} proyecto(s)
-              </p>
-            </Link>
-          ))}
-        </div>
-      )}
+      <div className="mt-8">
+        <ClientsDirectory clients={directory} />
+      </div>
     </div>
   );
 }

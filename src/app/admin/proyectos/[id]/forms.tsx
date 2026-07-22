@@ -10,6 +10,9 @@ import {
   updateProject,
   type ActionState,
 } from "@/app/admin/actions";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { fieldStyles, fieldStylesSm, labelStyles } from "@/components/ui/field";
 import type { Milestone, Project } from "@/types/database";
 
 const initialState: ActionState = { ok: true, message: "" };
@@ -39,104 +42,96 @@ export function EditProjectForm({ project }: { project: Project }) {
   const [state, formAction, pending] = useActionState(updateProject, initialState);
 
   return (
-    <form action={formAction} className="grid gap-4 rounded-card border border-hairline bg-ink-raised p-6">
-      <input type="hidden" name="projectId" value={project.id} />
+    <Card variant="surface" padding="lg">
+      <form action={formAction} className="grid gap-4">
+        <input type="hidden" name="projectId" value={project.id} />
 
-      <div>
-        <label htmlFor="name" className="mb-2 block text-sm font-medium text-paper">
-          Nombre del proyecto
-        </label>
-        <input
-          id="name"
-          name="name"
-          required
-          defaultValue={project.name}
-          className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 text-paper outline-none focus:border-lime"
-        />
-      </div>
-
-      <div>
-        <label htmlFor="summary" className="mb-2 block text-sm font-medium text-paper">
-          Resumen
-        </label>
-        <textarea
-          id="summary"
-          name="summary"
-          rows={2}
-          defaultValue={project.summary ?? ""}
-          className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 text-paper outline-none focus:border-lime"
-        />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="totalPrice" className="mb-2 block text-sm font-medium text-paper">
-            Precio total
+          <label htmlFor="name" className={labelStyles}>
+            Nombre del proyecto
           </label>
-          <input
-            id="totalPrice"
-            name="totalPrice"
-            type="number"
-            min="0"
-            step="0.01"
-            required
-            defaultValue={project.total_price}
-            className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 font-ledger text-paper outline-none focus:border-lime"
+          <input id="name" name="name" required defaultValue={project.name} className={fieldStyles} />
+        </div>
+
+        <div>
+          <label htmlFor="summary" className={labelStyles}>
+            Resumen
+          </label>
+          <textarea
+            id="summary"
+            name="summary"
+            rows={2}
+            defaultValue={project.summary ?? ""}
+            className={fieldStyles}
           />
         </div>
-        <div>
-          <label htmlFor="currency" className="mb-2 block text-sm font-medium text-paper">
-            Moneda
-          </label>
-          <input
-            id="currency"
-            name="currency"
-            required
-            defaultValue={project.currency}
-            className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 font-ledger text-paper outline-none focus:border-lime"
-          />
-        </div>
-      </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label htmlFor="startDate" className="mb-2 block text-sm font-medium text-paper">
-            Inicio
-          </label>
-          <input
-            id="startDate"
-            name="startDate"
-            type="date"
-            defaultValue={project.start_date ?? ""}
-            className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 text-paper outline-none focus:border-lime"
-          />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="totalPrice" className={labelStyles}>
+              Precio total
+            </label>
+            <input
+              id="totalPrice"
+              name="totalPrice"
+              type="number"
+              min="0"
+              step="0.01"
+              required
+              defaultValue={project.total_price}
+              className={`${fieldStyles} font-ledger`}
+            />
+          </div>
+          <div>
+            <label htmlFor="currency" className={labelStyles}>
+              Moneda
+            </label>
+            <input
+              id="currency"
+              name="currency"
+              required
+              defaultValue={project.currency}
+              className={`${fieldStyles} font-ledger`}
+            />
+          </div>
         </div>
-        <div>
-          <label htmlFor="targetEndDate" className="mb-2 block text-sm font-medium text-paper">
-            Meta de entrega
-          </label>
-          <input
-            id="targetEndDate"
-            name="targetEndDate"
-            type="date"
-            defaultValue={project.target_end_date ?? ""}
-            className="w-full rounded-lg border border-hairline bg-ink px-4 py-2.5 text-paper outline-none focus:border-lime"
-          />
-        </div>
-      </div>
 
-      <div className="flex items-center gap-4">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-lg bg-lime px-4 py-2 text-sm font-medium text-ink transition hover:bg-lime-deep disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {pending ? "Guardando…" : "Guardar cambios"}
-        </button>
-        {state.ok && state.message && <span className="text-sm text-lime">{state.message}</span>}
-        <ErrorMessage state={state} />
-      </div>
-    </form>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="startDate" className={labelStyles}>
+              Inicio
+            </label>
+            <input
+              id="startDate"
+              name="startDate"
+              type="date"
+              defaultValue={project.start_date ?? ""}
+              className={fieldStyles}
+            />
+          </div>
+          <div>
+            <label htmlFor="targetEndDate" className={labelStyles}>
+              Meta de entrega
+            </label>
+            <input
+              id="targetEndDate"
+              name="targetEndDate"
+              type="date"
+              defaultValue={project.target_end_date ?? ""}
+              className={fieldStyles}
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <Button type="submit" variant="primary" size="md" disabled={pending}>
+            {pending ? "Guardando…" : "Guardar cambios"}
+          </Button>
+          {state.ok && state.message && <span className="text-sm text-lime">{state.message}</span>}
+          <ErrorMessage state={state} />
+        </div>
+      </form>
+    </Card>
   );
 }
 
@@ -147,39 +142,24 @@ export function NewMilestoneForm({ projectId }: { projectId: string }) {
   useResetOnSuccess(state, formRef);
 
   return (
-    <form
-      ref={formRef}
-      action={formAction}
-      className="grid gap-3 rounded-card border border-dashed border-hairline p-4 sm:grid-cols-[1fr_1fr_auto_auto]"
-    >
-      <input type="hidden" name="projectId" value={projectId} />
-      <input
-        name="title"
-        required
-        placeholder="Título de la etapa"
-        className="rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-      />
-      <input
-        name="description"
-        placeholder="Descripción (opcional)"
-        className="rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-      />
-      <input
-        name="dueDate"
-        type="date"
-        className="rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-      />
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-lg border border-hairline px-4 py-2 text-sm text-paper transition hover:border-lime hover:text-lime disabled:opacity-60"
+    <Card variant="dashed" padding="sm">
+      <form
+        ref={formRef}
+        action={formAction}
+        className="grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto]"
       >
-        {pending ? "Agregando…" : "Agregar etapa"}
-      </button>
-      <div className="sm:col-span-4">
-        <ErrorMessage state={state} />
-      </div>
-    </form>
+        <input type="hidden" name="projectId" value={projectId} />
+        <input name="title" required placeholder="Título de la etapa" className={fieldStylesSm} />
+        <input name="description" placeholder="Descripción (opcional)" className={fieldStylesSm} />
+        <input name="dueDate" type="date" className={fieldStylesSm} />
+        <Button type="submit" variant="secondary" size="sm" disabled={pending}>
+          {pending ? "Agregando…" : "Agregar etapa"}
+        </Button>
+        <div className="sm:col-span-4">
+          <ErrorMessage state={state} />
+        </div>
+      </form>
+    </Card>
   );
 }
 
@@ -195,68 +175,41 @@ export function NewDeliverableForm({
   useResetOnSuccess(state, formRef);
 
   return (
-    <form
-      ref={formRef}
-      action={formAction}
-      className="grid gap-3 rounded-card border border-dashed border-hairline p-4"
-    >
-      <input type="hidden" name="projectId" value={projectId} />
-      <div className="grid gap-3 sm:grid-cols-2">
-        <input
-          name="name"
-          required
-          placeholder="Nombre del entregable"
-          className="rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-        />
-        <input
-          name="version"
-          placeholder="Versión (opcional, ej. v1)"
-          className="rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-        />
-      </div>
-      <input
-        name="description"
-        placeholder="Descripción (opcional)"
-        className="rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-      />
-      <div className="grid gap-3 sm:grid-cols-3">
-        <select
-          name="milestoneId"
-          defaultValue=""
-          className="rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-        >
-          <option value="">Sin etapa</option>
-          {milestones.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.title}
-            </option>
-          ))}
-        </select>
-        <select
-          name="status"
-          defaultValue="en_progreso"
-          className="rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-        >
-          <option value="en_progreso">En progreso</option>
-          <option value="en_revision">En revisión</option>
-          <option value="aprobado">Aprobado</option>
-          <option value="entregado">Entregado</option>
-        </select>
-        <input
-          name="file"
-          type="file"
-          className="rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper file:mr-3 file:rounded-md file:border-0 file:bg-hairline file:px-3 file:py-1 file:text-paper"
-        />
-      </div>
-      <button
-        type="submit"
-        disabled={pending}
-        className="justify-self-start rounded-lg border border-hairline px-4 py-2 text-sm text-paper transition hover:border-lime hover:text-lime disabled:opacity-60"
-      >
-        {pending ? "Guardando…" : "Agregar entregable"}
-      </button>
-      <ErrorMessage state={state} />
-    </form>
+    <Card variant="dashed" padding="sm">
+      <form ref={formRef} action={formAction} className="grid gap-3">
+        <input type="hidden" name="projectId" value={projectId} />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <input name="name" required placeholder="Nombre del entregable" className={fieldStylesSm} />
+          <input name="version" placeholder="Versión (opcional, ej. v1)" className={fieldStylesSm} />
+        </div>
+        <input name="description" placeholder="Descripción (opcional)" className={fieldStylesSm} />
+        <div className="grid gap-3 sm:grid-cols-3">
+          <select name="milestoneId" defaultValue="" className={fieldStylesSm}>
+            <option value="">Sin etapa</option>
+            {milestones.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.title}
+              </option>
+            ))}
+          </select>
+          <select name="status" defaultValue="en_progreso" className={fieldStylesSm}>
+            <option value="en_progreso">En progreso</option>
+            <option value="en_revision">En revisión</option>
+            <option value="aprobado">Aprobado</option>
+            <option value="entregado">Entregado</option>
+          </select>
+          <input
+            name="file"
+            type="file"
+            className={`${fieldStylesSm} file:mr-3 file:rounded-md file:border-0 file:bg-hairline file:px-3 file:py-1 file:text-paper`}
+          />
+        </div>
+        <Button type="submit" variant="secondary" size="sm" disabled={pending} className="justify-self-start">
+          {pending ? "Guardando…" : "Agregar entregable"}
+        </Button>
+        <ErrorMessage state={state} />
+      </form>
+    </Card>
   );
 }
 
@@ -266,78 +219,67 @@ export function NewResourceForm({ projectId }: { projectId: string }) {
   useResetOnSuccess(state, formRef);
 
   return (
-    <form
-      ref={formRef}
-      action={formAction}
-      className="grid gap-3 rounded-card border border-dashed border-hairline p-4"
-    >
-      <input type="hidden" name="projectId" value={projectId} />
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <label htmlFor="resource-title" className="mb-2 block text-sm font-medium text-paper">
-            Nombre del recurso
-          </label>
-          <input
-            id="resource-title"
-            name="title"
-            required
-            placeholder="Carpeta de Drive"
-            className="w-full rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-          />
+    <Card variant="dashed" padding="sm">
+      <form ref={formRef} action={formAction} className="grid gap-3">
+        <input type="hidden" name="projectId" value={projectId} />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label htmlFor="resource-title" className={labelStyles}>
+              Nombre del recurso
+            </label>
+            <input
+              id="resource-title"
+              name="title"
+              required
+              placeholder="Carpeta de Drive"
+              className={fieldStylesSm}
+            />
+          </div>
+          <div>
+            <label htmlFor="resource-url" className={labelStyles}>
+              URL
+            </label>
+            <input
+              id="resource-url"
+              name="url"
+              type="url"
+              required
+              placeholder="https://..."
+              className={fieldStylesSm}
+            />
+          </div>
         </div>
-        <div>
-          <label htmlFor="resource-url" className="mb-2 block text-sm font-medium text-paper">
-            URL
-          </label>
-          <input
-            id="resource-url"
-            name="url"
-            type="url"
-            required
-            placeholder="https://..."
-            className="w-full rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-          />
+        <div className="grid gap-3 sm:grid-cols-[220px_1fr]">
+          <div>
+            <label htmlFor="resource-type" className={labelStyles}>
+              Tipo
+            </label>
+            <select id="resource-type" name="resourceType" defaultValue="drive" className={fieldStylesSm}>
+              <option value="drive">Drive</option>
+              <option value="url">Enlace</option>
+              <option value="tutorial">Tutorial</option>
+              <option value="credential">Acceso</option>
+              <option value="other">Otro</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="resource-description" className={labelStyles}>
+              Descripcion
+            </label>
+            <input
+              id="resource-description"
+              name="description"
+              placeholder="Uso interno para el cliente"
+              className={fieldStylesSm}
+            />
+          </div>
         </div>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-[220px_1fr]">
-        <div>
-          <label htmlFor="resource-type" className="mb-2 block text-sm font-medium text-paper">
-            Tipo
-          </label>
-          <select
-            id="resource-type"
-            name="resourceType"
-            defaultValue="drive"
-            className="w-full rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-          >
-            <option value="drive">Drive</option>
-            <option value="url">Enlace</option>
-            <option value="tutorial">Tutorial</option>
-            <option value="credential">Acceso</option>
-            <option value="other">Otro</option>
-          </select>
-        </div>
-        <div>
-          <label htmlFor="resource-description" className="mb-2 block text-sm font-medium text-paper">
-            Descripcion
-          </label>
-          <input
-            id="resource-description"
-            name="description"
-            placeholder="Uso interno para el cliente"
-            className="w-full rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-          />
-        </div>
-      </div>
-      <button
-        type="submit"
-        disabled={pending}
-        className="justify-self-start rounded-lg border border-hairline px-4 py-2 text-sm text-paper transition hover:border-lime hover:text-lime disabled:opacity-60"
-      >
-        {pending ? "Guardando..." : "Agregar recurso"}
-      </button>
-      <ErrorMessage state={state} />
-    </form>
+        <Button type="submit" variant="secondary" size="sm" disabled={pending} className="justify-self-start">
+          {pending ? "Guardando..." : "Agregar recurso"}
+        </Button>
+        <ErrorMessage state={state} />
+      </form>
+    </Card>
   );
 }
 
@@ -347,86 +289,71 @@ export function NewProjectEventForm({ projectId }: { projectId: string }) {
   useResetOnSuccess(state, formRef);
 
   return (
-    <form
-      ref={formRef}
-      action={formAction}
-      className="grid gap-3 rounded-card border border-dashed border-hairline p-4"
-    >
-      <input type="hidden" name="projectId" value={projectId} />
-      <div className="grid gap-3 sm:grid-cols-[1fr_180px_180px]">
-        <div>
-          <label htmlFor="event-title" className="mb-2 block text-sm font-medium text-paper">
-            Cambio o contenido
-          </label>
-          <input
-            id="event-title"
-            name="title"
-            required
-            placeholder="Se actualizo la propuesta de contenidos"
-            className="w-full rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-          />
+    <Card variant="dashed" padding="sm">
+      <form ref={formRef} action={formAction} className="grid gap-3">
+        <input type="hidden" name="projectId" value={projectId} />
+        <div className="grid gap-3 sm:grid-cols-[1fr_180px_180px]">
+          <div>
+            <label htmlFor="event-title" className={labelStyles}>
+              Cambio o contenido
+            </label>
+            <input
+              id="event-title"
+              name="title"
+              required
+              placeholder="Se actualizo la propuesta de contenidos"
+              className={fieldStylesSm}
+            />
+          </div>
+          <div>
+            <label htmlFor="event-date" className={labelStyles}>
+              Fecha
+            </label>
+            <input
+              id="event-date"
+              name="eventDate"
+              type="date"
+              required
+              defaultValue={new Date().toISOString().slice(0, 10)}
+              className={fieldStylesSm}
+            />
+          </div>
+          <div>
+            <label htmlFor="event-type" className={labelStyles}>
+              Tipo
+            </label>
+            <select id="event-type" name="eventType" defaultValue="content" className={fieldStylesSm}>
+              <option value="content">Contenido</option>
+              <option value="review">Revision</option>
+              <option value="meeting">Reunion</option>
+              <option value="project">Proyecto</option>
+              <option value="milestone">Etapa</option>
+              <option value="deliverable">Entregable</option>
+              <option value="resource">Recurso</option>
+              <option value="payment">Pago</option>
+              <option value="other">Nota</option>
+            </select>
+          </div>
         </div>
-        <div>
-          <label htmlFor="event-date" className="mb-2 block text-sm font-medium text-paper">
-            Fecha
-          </label>
-          <input
-            id="event-date"
-            name="eventDate"
-            type="date"
-            required
-            defaultValue={new Date().toISOString().slice(0, 10)}
-            className="w-full rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-          />
-        </div>
-        <div>
-          <label htmlFor="event-type" className="mb-2 block text-sm font-medium text-paper">
-            Tipo
-          </label>
-          <select
-            id="event-type"
-            name="eventType"
-            defaultValue="content"
-            className="w-full rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-          >
-            <option value="content">Contenido</option>
-            <option value="review">Revision</option>
-            <option value="meeting">Reunion</option>
-            <option value="project">Proyecto</option>
-            <option value="milestone">Etapa</option>
-            <option value="deliverable">Entregable</option>
-            <option value="resource">Recurso</option>
-            <option value="payment">Pago</option>
-            <option value="other">Nota</option>
+        <textarea
+          name="description"
+          rows={2}
+          placeholder="Detalle breve para que todos sepan que se movio o que deben revisar."
+          className={fieldStylesSm}
+        />
+        <div className="grid gap-3 sm:grid-cols-[220px_auto]">
+          <select name="visibility" defaultValue="client" className={fieldStylesSm}>
+            <option value="client">Visible para cliente</option>
+            <option value="admin">Solo interno</option>
           </select>
+          <Button type="submit" variant="secondary" size="sm" disabled={pending} className="justify-self-start">
+            {pending ? "Agregando..." : "Agregar al calendario"}
+          </Button>
         </div>
-      </div>
-      <textarea
-        name="description"
-        rows={2}
-        placeholder="Detalle breve para que todos sepan que se movio o que deben revisar."
-        className="rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-      />
-      <div className="grid gap-3 sm:grid-cols-[220px_auto]">
-        <select
-          name="visibility"
-          defaultValue="client"
-          className="rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-        >
-          <option value="client">Visible para cliente</option>
-          <option value="admin">Solo interno</option>
-        </select>
-        <button
-          type="submit"
-          disabled={pending}
-          className="justify-self-start rounded-lg border border-hairline px-4 py-2 text-sm text-paper transition hover:border-lime hover:text-lime disabled:opacity-60"
-        >
-          {pending ? "Agregando..." : "Agregar al calendario"}
-        </button>
-      </div>
-      {state.ok && state.message && <p className="text-sm text-lime">{state.message}</p>}
-      <ErrorMessage state={state} />
-    </form>
+        {state.ok && state.message && <p className="text-sm text-lime">{state.message}</p>}
+        <ErrorMessage state={state} />
+      </form>
+    </Card>
   );
 }
 
@@ -436,48 +363,38 @@ export function NewPaymentForm({ projectId }: { projectId: string }) {
   useResetOnSuccess(state, formRef);
 
   return (
-    <form
-      ref={formRef}
-      action={formAction}
-      className="grid gap-3 rounded-card border border-dashed border-hairline p-4 sm:grid-cols-[auto_auto_1fr_auto_auto]"
-    >
-      <input type="hidden" name="projectId" value={projectId} />
-      <input
-        name="amount"
-        type="number"
-        min="0.01"
-        step="0.01"
-        required
-        placeholder="Monto"
-        className="rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-      />
-      <input
-        name="paidAt"
-        type="date"
-        required
-        defaultValue={new Date().toISOString().slice(0, 10)}
-        className="rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-      />
-      <input
-        name="method"
-        placeholder="Método (opcional)"
-        className="rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-      />
-      <input
-        name="note"
-        placeholder="Nota (opcional)"
-        className="rounded-lg border border-hairline bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-lime"
-      />
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-lg border border-hairline px-4 py-2 text-sm text-paper transition hover:border-lime hover:text-lime disabled:opacity-60"
+    <Card variant="dashed" padding="sm">
+      <form
+        ref={formRef}
+        action={formAction}
+        className="grid gap-3 sm:grid-cols-[auto_auto_1fr_auto_auto]"
       >
-        {pending ? "Agregando…" : "Agregar pago"}
-      </button>
-      <div className="sm:col-span-5">
-        <ErrorMessage state={state} />
-      </div>
-    </form>
+        <input type="hidden" name="projectId" value={projectId} />
+        <input
+          name="amount"
+          type="number"
+          min="0.01"
+          step="0.01"
+          required
+          placeholder="Monto"
+          className={fieldStylesSm}
+        />
+        <input
+          name="paidAt"
+          type="date"
+          required
+          defaultValue={new Date().toISOString().slice(0, 10)}
+          className={fieldStylesSm}
+        />
+        <input name="method" placeholder="Método (opcional)" className={fieldStylesSm} />
+        <input name="note" placeholder="Nota (opcional)" className={fieldStylesSm} />
+        <Button type="submit" variant="secondary" size="sm" disabled={pending}>
+          {pending ? "Agregando…" : "Agregar pago"}
+        </Button>
+        <div className="sm:col-span-5">
+          <ErrorMessage state={state} />
+        </div>
+      </form>
+    </Card>
   );
 }

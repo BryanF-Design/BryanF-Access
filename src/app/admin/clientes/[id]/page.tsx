@@ -6,7 +6,16 @@ import { createServiceRoleClient } from "@/lib/supabase/server";
 import { ProjectChangeCalendar } from "@/components/project-change-calendar";
 import { StatusPill } from "@/components/status-pill";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { ClientCredentialList, EditClientForm, NewClientCredentialForm, type CredentialSummary } from "./forms";
+import { Avatar } from "@/components/ui/avatar";
+import { buttonStyles } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import {
+  ClientCredentialList,
+  EditClientForm,
+  NewClientCredentialForm,
+  type CredentialSummary,
+} from "./forms";
 import { SendAccessLinkForm } from "./send-access-link-form";
 import type { Client, ClientCredential, Payment, Project, ProjectEvent } from "@/types/database";
 
@@ -77,52 +86,55 @@ export default async function AdminClientDetailPage({
       </Link>
 
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl font-semibold text-paper">
-            {client.company ?? client.full_name}
-          </h1>
-          {client.company && <p className="mt-1 text-paper-dim">{client.full_name}</p>}
-          <p className="mt-2 font-ledger text-sm text-paper-dim">{client.email}</p>
-          <p className="mt-1 font-ledger text-xs text-paper-dim">
-            Cliente desde {formatDate(client.created_at)}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {client.phone && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline px-3 py-1 text-xs text-paper-dim">
-                <Phone className="h-3.5 w-3.5 text-lime" aria-hidden="true" />
-                {client.phone}
-              </span>
-            )}
-            {client.country && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline px-3 py-1 text-xs text-paper-dim">
-                <Globe2 className="h-3.5 w-3.5 text-lime" aria-hidden="true" />
-                {client.country}
-              </span>
-            )}
-            {client.industry && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline px-3 py-1 text-xs text-paper-dim">
-                <BriefcaseBusiness className="h-3.5 w-3.5 text-lime" aria-hidden="true" />
-                {client.industry}
-              </span>
-            )}
-            {client.drive_url && (
-              <a
-                href={client.drive_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full border border-hairline px-3 py-1 text-xs text-lime transition hover:border-lime"
-              >
-                <FolderKanban className="h-3.5 w-3.5" aria-hidden="true" />
-                Drive principal
-              </a>
-            )}
+        <div className="flex min-w-0 items-start gap-4">
+          <Avatar name={client.company ?? client.full_name} size="lg" className="mt-1" />
+          <div className="min-w-0">
+            <h1 className="font-display text-3xl font-semibold text-paper">
+              {client.company ?? client.full_name}
+            </h1>
+            {client.company && <p className="mt-1 text-paper-dim">{client.full_name}</p>}
+            <p className="mt-2 font-ledger text-sm text-paper-dim">{client.email}</p>
+            <p className="mt-1 font-ledger text-xs text-paper-dim">
+              Cliente desde {formatDate(client.created_at)}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {client.phone && (
+                <span className="inline-flex items-center gap-1.5 rounded-pill border border-hairline px-3 py-1 text-xs text-paper-dim">
+                  <Phone className="h-3.5 w-3.5 text-lime" aria-hidden="true" />
+                  {client.phone}
+                </span>
+              )}
+              {client.country && (
+                <span className="inline-flex items-center gap-1.5 rounded-pill border border-hairline px-3 py-1 text-xs text-paper-dim">
+                  <Globe2 className="h-3.5 w-3.5 text-lime" aria-hidden="true" />
+                  {client.country}
+                </span>
+              )}
+              {client.industry && (
+                <span className="inline-flex items-center gap-1.5 rounded-pill border border-hairline px-3 py-1 text-xs text-paper-dim">
+                  <BriefcaseBusiness className="h-3.5 w-3.5 text-lime" aria-hidden="true" />
+                  {client.industry}
+                </span>
+              )}
+              {client.drive_url && (
+                <a
+                  href={client.drive_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-pill border border-hairline px-3 py-1 text-xs text-lime transition hover:border-lime"
+                >
+                  <FolderKanban className="h-3.5 w-3.5" aria-hidden="true" />
+                  Drive principal
+                </a>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex flex-wrap items-start gap-3">
           <SendAccessLinkForm clientId={client.id} />
           <Link
             href={`/admin/proyectos/nuevo?cliente=${client.id}`}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-lime px-4 py-2 text-sm font-medium text-ink transition hover:bg-lime-deep"
+            className={buttonStyles({ variant: "primary", size: "md" })}
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
             Nuevo proyecto
@@ -134,35 +146,35 @@ export default async function AdminClientDetailPage({
         <div className="min-w-0">
           <h2 className="mb-4 font-display text-lg font-semibold text-paper">Proyectos</h2>
 
-      {projects.length === 0 ? (
-        <div className="rounded-card border border-dashed border-hairline p-8 text-center">
-          <p className="text-sm text-paper-dim">Este cliente todavía no tiene proyectos.</p>
-        </div>
-      ) : (
-        <div className="grid gap-3">
-          {projects.map((project) => {
-            const paid = paidByProject.get(project.id) ?? 0;
-            const remaining = Math.max(0, Number(project.total_price) - paid);
+          {projects.length === 0 ? (
+            <EmptyState title="Este cliente todavía no tiene proyectos." />
+          ) : (
+            <div className="grid gap-3">
+              {projects.map((project) => {
+                const paid = paidByProject.get(project.id) ?? 0;
+                const remaining = Math.max(0, Number(project.total_price) - paid);
 
-            return (
-              <Link
-                key={project.id}
-                href={`/admin/proyectos/${project.id}`}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-hairline bg-ink-raised p-5 transition hover:border-lime"
-              >
-                <div>
-                  <p className="font-medium text-paper">{project.name}</p>
-                  <p className="mt-1 font-ledger text-xs text-paper-dim">
-                    Resta {formatCurrency(remaining, project.currency)} de{" "}
-                    {formatCurrency(Number(project.total_price), project.currency)}
-                  </p>
-                </div>
-                <StatusPill status={project.status} />
-              </Link>
-            );
-          })}
-        </div>
-      )}
+                return (
+                  <Link key={project.id} href={`/admin/proyectos/${project.id}`} className="group block">
+                    <Card
+                      variant="surface"
+                      padding="lg"
+                      className="flex flex-wrap items-center justify-between gap-3 transition group-hover:border-lime group-hover:shadow-soft"
+                    >
+                      <div>
+                        <p className="font-medium text-paper">{project.name}</p>
+                        <p className="mt-1 font-ledger text-xs text-paper-dim">
+                          Resta {formatCurrency(remaining, project.currency)} de{" "}
+                          {formatCurrency(Number(project.total_price), project.currency)}
+                        </p>
+                      </div>
+                      <StatusPill status={project.status} />
+                    </Card>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
 
           <section className="mt-10">
             <h2 className="mb-4 font-display text-lg font-semibold text-paper">Calendario del cliente</h2>

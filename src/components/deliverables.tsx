@@ -1,17 +1,13 @@
 import { Download, FileX2 } from "lucide-react";
 import { StatusPill } from "@/components/status-pill";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { formatShortDate } from "@/lib/format";
 import type { Deliverable } from "@/types/database";
 
 export function Deliverables({ deliverables }: { deliverables: Deliverable[] }) {
   if (deliverables.length === 0) {
-    return (
-      <div className="rounded-card border border-dashed border-hairline p-8 text-center">
-        <p className="text-sm text-paper-dim">
-          Todavía no hay entregables publicados para este proyecto.
-        </p>
-      </div>
-    );
+    return <EmptyState title="Todavía no hay entregables publicados para este proyecto." />;
   }
 
   const sorted = [...deliverables].sort(
@@ -21,9 +17,11 @@ export function Deliverables({ deliverables }: { deliverables: Deliverable[] }) 
   return (
     <div className="grid gap-3">
       {sorted.map((deliverable) => (
-        <div
+        <Card
           key={deliverable.id}
-          className="flex flex-col gap-3 rounded-card border border-hairline bg-ink-raised p-5"
+          variant="surface"
+          padding="lg"
+          className="flex flex-col gap-3 transition hover:border-lime/60 hover:shadow-soft"
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -61,7 +59,7 @@ export function Deliverables({ deliverables }: { deliverables: Deliverable[] }) 
               </span>
             )}
           </div>
-        </div>
+        </Card>
       ))}
     </div>
   );

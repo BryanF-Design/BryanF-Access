@@ -11,6 +11,7 @@ import {
   PenLine,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { EmptyState } from "@/components/ui/empty-state";
 import { formatDate, formatShortDate } from "@/lib/format";
 import type { ProjectEvent, ProjectEventType } from "@/types/database";
 
@@ -72,11 +73,7 @@ export function ProjectChangeCalendar({
   showVisibility?: boolean;
 }) {
   if (events.length === 0) {
-    return (
-      <div className="rounded-card border border-dashed border-hairline p-8 text-center">
-        <p className="text-sm text-paper-dim">{emptyMessage}</p>
-      </div>
-    );
+    return <EmptyState title={emptyMessage} />;
   }
 
   const sorted = [...events].sort((a, b) => {
@@ -143,7 +140,7 @@ export function ProjectChangeCalendar({
           return (
             <article
               key={event.id}
-              className="rounded-card border border-hairline bg-ink-raised p-4 transition hover:border-lime/70"
+              className="rounded-card border border-hairline bg-ink-raised p-4 transition hover:border-lime/70 hover:shadow-soft"
             >
               <div className="flex items-start gap-3">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-lime-dim text-lime">

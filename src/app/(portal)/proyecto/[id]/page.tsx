@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CalendarClock, PiggyBank, TrendingUp, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { StatusPill } from "@/components/status-pill";
 import { Ledger } from "@/components/ledger";
@@ -9,7 +9,9 @@ import { Deliverables } from "@/components/deliverables";
 import { ProjectChangeCalendar } from "@/components/project-change-calendar";
 import { ProjectResources } from "@/components/project-resources";
 import { Tutorials } from "@/components/tutorials";
-import { formatDate } from "@/lib/format";
+import { Card } from "@/components/ui/card";
+import { StatCard } from "@/components/ui/stat-card";
+import { formatCurrency, formatDate, formatShortDate } from "@/lib/format";
 import type { Client, Deliverable, Milestone, Payment, Project, ProjectEvent, ProjectResource } from "@/types/database";
 
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
@@ -53,6 +55,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   ]);
 
   const paidTotal = (payments ?? []).reduce((sum, p) => sum + Number(p.amount), 0);
+  const totalPrice = Number(project.total_price);
+  const remaining = Math.max(0, totalPrice - paidTotal);
+  const pct = totalPrice > 0 ? Math.min(100, Math.round((paidTotal / totalPrice) * 100)) : 0;
   const showBackLink = (allProjects?.length ?? 0) > 1;
   const visibleResources = (resources ?? []).filter((resource) => resource.resource_type !== "credential");
 
@@ -70,7 +75,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl font-semibold text-paper">{project.name}</h1>
+          <p className="font-ledger text-xs uppercase tracking-[0.24em] text-lime">Proyecto</p>
+          <h1 className="mt-1 font-display text-3xl font-semibold text-paper">{project.name}</h1>
           {project.summary && <p className="mt-2 max-w-xl text-paper-dim">{project.summary}</p>}
           <p className="mt-3 font-ledger text-xs text-paper-dim">
             Inicio: {formatDate(project.start_date)} · Meta de entrega:{" "}
@@ -80,17 +86,39 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         <StatusPill status={project.status} />
       </div>
 
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          icon={Wallet}
+          label="Abonado"
+          value={formatCurrency(paidTotal, project.currency)}
+          accent="lime"
+        />
+        <StatCard
+          icon={PiggyBank}
+          label="Resta por liquidar"
+          value={formatCurrency(remaining, project.currency)}
+          accent="amber"
+        />
+        <StatCard icon={TrendingUp} label="Progreso" value={`${pct}%`} accent="sky" />
+        <StatCard
+          icon={CalendarClock}
+          label="Meta de entrega"
+          value={formatShortDate(project.target_end_date)}
+          accent="lime"
+        />
+      </div>
+
       <div className="mt-8">
         <Ledger
           projectName={project.name}
-          totalPrice={Number(project.total_price)}
+          totalPrice={totalPrice}
           currency={project.currency}
           paidTotal={paidTotal}
         />
       </div>
 
       {client && (
-        <section className="mt-8 rounded-card border border-hairline bg-ink-raised p-5">
+        <Card variant="surface" padding="lg" className="mt-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <h2 className="font-display text-lg font-semibold text-paper">Base del cliente</h2>
@@ -111,7 +139,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
               </a>
             )}
           </div>
-        </section>
+        </Card>
       )}
 
       <section className="mt-12">

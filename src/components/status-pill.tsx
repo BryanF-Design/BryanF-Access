@@ -1,4 +1,4 @@
-import { cn } from "@/lib/cn";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import type { DeliverableStatus, MilestoneStatus, ProjectStatus } from "@/types/database";
 
 type Status = ProjectStatus | MilestoneStatus | DeliverableStatus;
@@ -14,27 +14,21 @@ const LABELS: Record<Status, string> = {
   entregado: "Entregado",
 };
 
-const STYLES: Record<Status, string> = {
-  planeacion: "bg-paper-dim/15 text-paper-dim border-paper-dim/30",
-  en_progreso: "bg-lime/15 text-lime border-lime/30",
-  en_revision: "bg-amber/15 text-amber border-amber/30",
-  pausado: "bg-rose/15 text-rose border-rose/30",
-  completado: "bg-lime/15 text-lime border-lime/30",
-  pendiente: "bg-paper-dim/15 text-paper-dim border-paper-dim/30",
-  aprobado: "bg-lime/15 text-lime border-lime/30",
-  entregado: "bg-lime/15 text-lime border-lime/30",
+const TONES: Record<Status, NonNullable<BadgeProps["tone"]>> = {
+  planeacion: "neutral",
+  en_progreso: "lime",
+  en_revision: "amber",
+  pausado: "rose",
+  completado: "lime",
+  pendiente: "neutral",
+  aprobado: "lime",
+  entregado: "lime",
 };
 
-export function StatusPill({ status }: { status: Status }) {
+export function StatusPill({ status, className }: { status: Status; className?: string }) {
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-ledger text-[11px] uppercase tracking-wide",
-        STYLES[status],
-      )}
-    >
-      <span className="h-1.5 w-1.5 rounded-full bg-current" />
+    <Badge tone={TONES[status]} className={className}>
       {LABELS[status]}
-    </span>
+    </Badge>
   );
 }

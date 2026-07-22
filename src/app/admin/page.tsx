@@ -1,10 +1,36 @@
+import { Plus, TrendingUp, Users, Wallet } from "lucide-react";
 import Link from "next/link";
-import { Plus } from "lucide-react";
 import { requireAdmin } from "@/lib/admin";
 import { createServiceRoleClient } from "@/lib/supabase/server";
-import { StatusPill } from "@/components/status-pill";
-import { formatCurrency, formatShortDate } from "@/lib/format";
+import { formatCurrency } from "@/lib/format";
+import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatCard } from "@/components/ui/stat-card";
+import { DashboardProjectsPanel, type DashboardProject } from "./dashboard-projects-panel";
 import type { Client, Payment, Project } from "@/types/database";
+
+function monthlyTotals(payments: Payment[]) {
+  const now = new Date();
+  const keys: string[] = [];
+  const buckets = new Map<string, number>();
+
+  for (let i = 5; i >= 0; i--) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${date.getFullYear()}-${date.getMonth()}`;
+    keys.push(key);
+    buckets.set(key, 0);
+  }
+
+  for (const payment of payments) {
+    const date = new Date(payment.paid_at);
+    const key = `${date.getFullYear()}-${date.getMonth()}`;
+    if (buckets.has(key)) {
+      buckets.set(key, (buckets.get(key) ?? 0) + Number(payment.amount));
+    }
+  }
+
+  return keys.map((key) => buckets.get(key) ?? 0);
+}
 
 export default async function AdminDashboard() {
   await requireAdmin();
@@ -37,105 +63,89 @@ export default async function AdminDashboard() {
     return sum + Math.max(0, Number(p.total_price) - paid);
   }, 0);
 
+  const monthly = monthlyTotals(payments);
+  const totalCobrado = monthly.reduce((sum, value) => sum + value, 0);
+  const lastMonth = monthly[monthly.length - 1] ?? 0;
+  const prevMonth = monthly[monthly.length - 2] ?? 0;
+
+  let cobradoDelta: { label: string; tone: "positive" | "negative" | "neutral" } = {
+    label: "Sin cambios vs mes anterior",
+    tone: "neutral",
+  };
+  if (prevMonth === 0 && lastMonth > 0) {
+    cobradoDelta = { label: "Nuevo este mes", tone: "positive" };
+  } else if (prevMonth > 0) {
+    const pct = Math.round(((lastMonth - prevMonth) / prevMonth) * 100);
+    if (pct !== 0) {
+      cobradoDelta = {
+        label: `${pct > 0 ? "+" : ""}${pct}% vs mes anterior`,
+        tone: pct > 0 ? "positive" : "negative",
+      };
+    }
+  }
+
+  const dashboardProjects: DashboardProject[] = projects.map((project) => {
+    const paid = paidByProject.get(project.id) ?? 0;
+    const client = clientsById.get(project.client_id);
+    return {
+      id: project.id,
+      name: project.name,
+      status: project.status,
+      currency: project.currency,
+      totalPrice: Number(project.total_price),
+      paid,
+      remaining: Math.max(0, Number(project.total_price) - paid),
+      targetEndDate: project.target_end_date,
+      clientId: client?.id ?? null,
+      clientName: client ? (client.company ?? client.full_name) : "Sin cliente",
+    };
+  });
+
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="font-display text-3xl font-semibold text-paper">Panel</h1>
-        <Link
-          href="/admin/clientes/nuevo"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-lime px-4 py-2 text-sm font-medium text-ink transition hover:bg-lime-deep"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          Nuevo cliente
-        </Link>
-      </div>
+      <PageHeader
+        eyebrow="Bitácora"
+        title="Panel"
+        description="Vista rápida de clientes, proyectos activos y cobranza."
+        actions={
+          <Link href="/admin/clientes/nuevo">
+            <Button variant="primary" size="md">
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Nuevo cliente
+            </Button>
+          </Link>
+        }
+      />
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-card border border-hairline bg-ink-raised p-5">
-          <p className="text-sm text-paper-dim">Clientes</p>
-          <p className="mt-1 font-display text-2xl font-semibold text-paper">{clients.length}</p>
-        </div>
-        <div className="rounded-card border border-hairline bg-ink-raised p-5">
-          <p className="text-sm text-paper-dim">Proyectos activos</p>
-          <p className="mt-1 font-display text-2xl font-semibold text-paper">
-            {activeProjects.length}
-          </p>
-        </div>
-        <div className="rounded-card border border-hairline bg-ink-raised p-5">
-          <p className="text-sm text-paper-dim">Pendiente de cobro</p>
-          <p className="mt-1 font-ledger text-2xl font-semibold text-lime">
-            {formatCurrency(totalPendiente, "MXN")}
-          </p>
-        </div>
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard icon={Users} label="Clientes" value={String(clients.length)} accent="lime" />
+        <StatCard
+          icon={TrendingUp}
+          label="Proyectos activos"
+          value={String(activeProjects.length)}
+          accent="sky"
+        />
+        <StatCard
+          icon={Wallet}
+          label="Pendiente de cobro"
+          value={formatCurrency(totalPendiente, "MXN")}
+          accent="amber"
+        />
+        <StatCard
+          icon={Wallet}
+          label="Cobrado (6 meses)"
+          value={formatCurrency(totalCobrado, "MXN")}
+          delta={cobradoDelta}
+          sparkline={monthly}
+          accent="lime"
+        />
       </div>
 
       <h2 className="mb-4 mt-10 font-display text-lg font-semibold text-paper">
         Proyectos por entrega
       </h2>
 
-      {projects.length === 0 ? (
-        <div className="rounded-card border border-dashed border-hairline p-8 text-center">
-          <p className="text-sm text-paper-dim">
-            Todavía no has dado de alta ningún proyecto.{" "}
-            <Link href="/admin/clientes/nuevo" className="text-lime hover:text-lime-deep">
-              Empieza con un cliente nuevo
-            </Link>
-            .
-          </p>
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-card border border-hairline">
-          <table className="w-full min-w-[640px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-hairline text-paper-dim">
-                <th className="px-4 py-3 font-normal">Proyecto</th>
-                <th className="px-4 py-3 font-normal">Cliente</th>
-                <th className="px-4 py-3 font-normal">Estatus</th>
-                <th className="px-4 py-3 font-normal">Meta de entrega</th>
-                <th className="px-4 py-3 text-right font-normal">Resta por cobrar</th>
-              </tr>
-            </thead>
-            <tbody>
-              {projects.map((project) => {
-                const paid = paidByProject.get(project.id) ?? 0;
-                const remaining = Math.max(0, Number(project.total_price) - paid);
-                const client = clientsById.get(project.client_id);
-
-                return (
-                  <tr key={project.id} className="border-b border-hairline last:border-0">
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/admin/proyectos/${project.id}`}
-                        className="font-medium text-paper hover:text-lime"
-                      >
-                        {project.name}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-paper-dim">
-                      {client ? (
-                        <Link href={`/admin/clientes/${client.id}`} className="hover:text-lime">
-                          {client.company ?? client.full_name}
-                        </Link>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusPill status={project.status} />
-                    </td>
-                    <td className="px-4 py-3 font-ledger text-paper-dim">
-                      {formatShortDate(project.target_end_date)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-ledger text-paper">
-                      {formatCurrency(remaining, project.currency)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <DashboardProjectsPanel projects={dashboardProjects} />
     </div>
   );
 }
