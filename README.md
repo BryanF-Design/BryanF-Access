@@ -26,11 +26,11 @@ For server-side auth, use the token hash flow in the Magic Link template:
 </p>
 ```
 
-Set `Site URL` to `https://access.bryanfdesign.com.mx` and allow these redirect URLs:
+Set `Site URL` to `https://access.bryanfdesign.com` and allow these redirect URLs:
 
 ```txt
-https://access.bryanfdesign.com.mx/auth/callback
-https://access.bryanfdesign.com.mx/auth/confirm
+https://access.bryanfdesign.com/auth/callback
+https://access.bryanfdesign.com/auth/confirm
 http://localhost:3001/auth/callback
 http://localhost:3001/auth/confirm
 ```
@@ -60,7 +60,7 @@ Supabase puede enviar magic links con SMTP personalizado. Google Workspace puede
 - Alternativa simple: `smtp.gmail.com`, puerto `587` con TLS o `465` con SSL, correo completo como usuario y App Password.
 - Para produccion con mas control de entregabilidad, tambien puedes usar Resend, Postmark, SendGrid, Brevo o AWS SES.
 
-Configura SPF/DKIM/DMARC del dominio y usa un remitente tipo `acceso@bryanfdesign.com.mx` o `no-reply@bryanfdesign.com.mx`.
+Configura SPF/DKIM/DMARC del dominio y usa un remitente tipo `acceso@bryanfdesign.com` o `no-reply@bryanfdesign.com`.
 
 ## Archivos Y Tutoriales
 

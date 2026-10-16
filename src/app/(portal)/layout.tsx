@@ -30,10 +30,11 @@ export default async function PortalLayout({ children }: { children: React.React
         <div className="relative max-w-sm">
           <LogoMark size="lg" glow className="mx-auto justify-center" />
           <p className="mt-7 font-display text-2xl font-semibold text-paper">
-            Tu cuenta aún no tiene un proyecto vinculado
+            Estamos preparando tu cuenta
           </p>
           <p className="mt-3 text-sm text-paper-dim">
-            Contacta a tu asesor en BryanF Design para activar tu acceso a Bitácora.
+            Tu cuenta se activa sola cuando se confirma tu pago o tu suscripción. Si ya
+            pagaste y no ves nada en unos minutos, escríbenos y la activamos.
           </p>
           <p className="mt-2 text-xs text-paper-dim">
             Si eres del equipo de BryanF, entra en{" "}
@@ -56,9 +57,19 @@ export default async function PortalLayout({ children }: { children: React.React
     <div className="flex min-h-dvh flex-1 flex-col">
       <header className="sticky top-0 z-30 border-b border-hairline bg-ink/85 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-4 px-6 py-3.5">
-          <Link href="/" className="shrink-0">
-            <LogoMark size="sm" />
-          </Link>
+          <div className="flex min-w-0 items-center gap-5">
+            <Link href="/" className="shrink-0">
+              <LogoMark size="sm" />
+            </Link>
+            <nav aria-label="Secciones" className="hidden items-center gap-1 sm:flex">
+              <Link href="/" className="rounded-lg px-3 py-1.5 text-sm text-paper-dim transition hover:bg-ink-raised hover:text-paper">
+                Mi cuenta
+              </Link>
+              <Link href="/pagos" className="rounded-lg px-3 py-1.5 text-sm text-paper-dim transition hover:bg-ink-raised hover:text-paper">
+                Pagos
+              </Link>
+            </nav>
+          </div>
 
           <div className="flex min-w-0 items-center gap-2.5">
             <a

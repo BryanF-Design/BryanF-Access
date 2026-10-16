@@ -80,14 +80,47 @@ export interface Project {
   created_at: string;
 }
 
+export type PaymentProvider = "stripe" | "mercadopago" | "transfer" | "manual";
+export type PaymentStatus = "aprobado" | "pendiente" | "rechazado" | "reembolsado";
+
 export interface Payment {
   id: string;
-  project_id: string;
+  /** Null en cobros de la suscripción (van ligados al cliente). */
+  project_id: string | null;
   amount: number;
   paid_at: string;
   method: string | null;
   note: string | null;
   created_at: string;
+  // Columnas de la migración 20261016 (opcionales hasta aplicarla).
+  client_id?: string | null;
+  subscription_id?: string | null;
+  concept?: string | null;
+  currency?: string | null;
+  provider?: PaymentProvider | null;
+  provider_ref?: string | null;
+  folio?: string | null;
+  status?: PaymentStatus | null;
+  receipt_url?: string | null;
+}
+
+export type SubscriptionStatus = "activa" | "pendiente_pago" | "pausada" | "cancelada";
+
+export interface Subscription {
+  id: string;
+  client_id: string;
+  plan: string;
+  provider: "stripe" | "mercadopago" | "transfer";
+  provider_ref: string | null;
+  status: SubscriptionStatus;
+  amount: number;
+  currency: string;
+  started_at: string;
+  next_charge_at: string | null;
+  ends_at: string | null;
+  manage_url: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Milestone {

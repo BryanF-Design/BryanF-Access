@@ -49,6 +49,7 @@ export default async function AdminDashboard() {
   const clientsById = new Map(clients.map((c) => [c.id, c]));
   const paidByProject = new Map<string, number>();
   for (const payment of payments) {
+    if (!payment.project_id || (payment.status && payment.status !== "aprobado")) continue;
     paidByProject.set(
       payment.project_id,
       (paidByProject.get(payment.project_id) ?? 0) + Number(payment.amount),

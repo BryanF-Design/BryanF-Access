@@ -12,6 +12,7 @@ import { Tutorials } from "@/components/tutorials";
 import { Card } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";
 import { formatCurrency, formatDate, formatShortDate } from "@/lib/format";
+import { isApproved } from "@/lib/account";
 import type { Client, Deliverable, Milestone, Payment, Project, ProjectEvent, ProjectResource } from "@/types/database";
 
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
@@ -54,11 +55,12 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       .returns<ProjectEvent[]>(),
   ]);
 
-  const paidTotal = (payments ?? []).reduce((sum, p) => sum + Number(p.amount), 0);
+  const paidTotal = (payments ?? []).filter(isApproved).reduce((sum, p) => sum + Number(p.amount), 0);
   const totalPrice = Number(project.total_price);
   const remaining = Math.max(0, totalPrice - paidTotal);
   const pct = totalPrice > 0 ? Math.min(100, Math.round((paidTotal / totalPrice) * 100)) : 0;
-  const showBackLink = (allProjects?.length ?? 0) > 1;
+  // Siempre hay "Mi cuenta" (suscripción, pagos), así que el regreso se muestra siempre.
+  const showBackLink = Boolean(allProjects);
   const visibleResources = (resources ?? []).filter((resource) => resource.resource_type !== "credential");
 
   return (
@@ -69,7 +71,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
           className="mb-6 inline-flex items-center gap-1.5 text-sm text-paper-dim transition hover:text-lime"
         >
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-          Todos tus proyectos
+          Mi cuenta
         </Link>
       )}
 
